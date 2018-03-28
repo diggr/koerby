@@ -5,8 +5,7 @@ import uuid
 import pandas as pd
 from tqdm import tqdm
 from config import DIR, IDS
-from utils.helper import std, get_geoip, top_level_domain
-
+from utils.helper import std, get_geoip, top_level_domain, DOMAIN_DICT
 
 def load_company_dataset():
     filepath = os.path.join(DIR["data"], "company_dataset.json")
@@ -79,15 +78,20 @@ def get_url_information(url):
     #print("url ifno")
     geoip = get_geoip(url)
     tld = top_level_domain(url)
+    if tld in DOMAIN_DICT:
+        tld_country = DOMAIN_DICT[tld]
+    else:
+        tld_country = None
     rv = {
         "url": url,
         "geoip": geoip,
-        "tld": tld
+        "tld": tld,
+        "tld_country": tld_country
     }
     return rv
 
 
-def insert_entry(company_dataset, company):
+def insert_entry(company_dataset, company, filename, row_id):
     id_ = uuid.uuid4().hex
     if "name_en" in company:
         name_en = [ company["name_en"] ]
@@ -98,7 +102,11 @@ def insert_entry(company_dataset, company):
     else:
         name_ja = []
     if "url" in company:
-        url = [ get_url_information(company["url"]) ]
+        url_info = get_url_information(company["url"])
+        if url_info["url"]:
+            url = [ url_info ]
+        else:
+            url = []
     else:
         url = []
     if "wiki_link" in company:
@@ -114,17 +122,22 @@ def insert_entry(company_dataset, company):
     else:
         mobygames_id = None
 
+    source_files = {
+        filename: [ row_id ]
+    }
+
     company_dataset.append({
-        "vgcii_id": id_,
+        "kirby_id": id_,
         "name_en": name_en,
         "name_ja": name_ja,
         "url": url,
         "wiki_links": wiki_links,
         "wkp": wkp,
-        "mobygames_id": mobygames_id
+        "mobygames_id": mobygames_id,
+        "source_files": source_files
     })
 
-def add_to_entry(entry, company):
+def add_to_entry(entry, company, filename, row_id):
     if "name_en" in company:
         if company["name_en"] not in entry["name_en"]:
             entry["name_en"].append(company["name_en"]) 
@@ -142,39 +155,38 @@ def add_to_entry(entry, company):
         all_urls = [x["url"] for x in entry["url"]]
         if company["url"] not in all_urls:
             entry["url"].append(get_url_information(company["url"]))
+    if filename in entry["source_files"]:
+        if row_id not in entry["source_files"][filename]:
+            entry["source_files"][filename].append(row_id)
+    else:
+        entry["source_files"][filename] = [ row_id ]
 
-def save_export_yaml(export):
-    data = {
-        "datasets": sorted(list(export.keys()))
-    }
-    with open("export.yml", "w") as f:
-        yaml.dump(data, f, default_flow_style=False)
+def save_dataset_yaml(datasets):
+    with open("datasets.yml", "w") as f:
+        yaml.dump(datasets, f, default_flow_style=False)
 
 
 def main():
 
-    export_yaml = {}
+    dataset_yaml = {}
 
     company_dataset = load_company_dataset()
 
     for dataset, filename in load_pre_files():
 
         print(filename)
-        export_yaml[filename] = list ( set(dataset[0].keys()) - set(["wkp", "wiki_link", "url", "name_en", "name_ja", "mobygames_id", "id"]) )
+        dataset_yaml[filename] = list ( set(dataset[0].keys()) - set(["wkp", "wiki_link", "url", "name_en", "name_ja", "mobygames_id", "id"]) )
 
-        for company in tqdm(dataset):
-            #print(company)
+        for row_id, company in tqdm(enumerate(dataset)):
             match = get_match(company, company_dataset)
-            #print(match)
             if not match:
-                insert_entry(company_dataset, company)
+                insert_entry(company_dataset, company, filename, row_id)
             else:
-                add_to_entry(match, company)
+                add_to_entry(match, company, filename, row_id)
     
     save_company_dataset(company_dataset)
-    #print(export_yaml)
 
-    save_export_yaml(export_yaml)
+    save_dataset_yaml(dataset_yaml)
 
 if __name__ == "__main__":
     main()

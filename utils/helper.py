@@ -1,5 +1,6 @@
 import string
 import socket
+import json
 from geolite2 import geolite2
 
 PUNCT_TRANSTABLE = str.maketrans("","",".,:-〔〕'’*/!&?+")
@@ -32,3 +33,12 @@ def get_geoip(url):
             return None
     else:
         return None
+
+def get_domain_dict():
+    with open("domain_countries.json") as f:
+        domains = json.load(f)
+
+    domain_dict = { x["fields"]["tld"]:x["fields"]["country"] for x in domains }
+    return domain_dict
+    
+DOMAIN_DICT = get_domain_dict()

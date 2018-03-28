@@ -6,9 +6,14 @@ from config import IDS, DIR
 
 
 def load_export_config():
-    with open("export.yml") as f:
-        config = yaml.load(f)
-    return config
+    if os.path.exists("export.yml"):
+        with open("export.yml") as f:
+            config = yaml.load(f)
+    else:
+        config = None
+    with open("datasets.yml") as f:
+        datasets = yaml.load(f)
+    return datasets, config
 
 def save_export(export):
     df = pd.DataFrame(export)
@@ -16,7 +21,7 @@ def save_export(export):
     df.sort_values(by="name_en").to_csv(filepath)
 
 def main():
-    config = load_export_config()
+    datasets, config = load_export_config()
 
     company_dataset_filepath = os.path.join(DIR["data"], "company_dataset.json")
     with open(company_dataset_filepath) as f:
@@ -26,14 +31,11 @@ def main():
 
     for company in company_dataset:
 
-        for source_file in config["datasets"]:
-            #print(source_file)
-            pass
-        
         export_row = {}
 
         #ids
-        
+        export_row["kirby_id"] = company["kirby_id"]
+
         for id_ in IDS:
             if id_ in company:
                 export_row[id_] = company[id_]
@@ -57,20 +59,32 @@ def main():
             export_row["name_ja"] = None
 
         #urls
-        url = company["url"][0]
-        if url["url"]:
-            export_row["url"] = url["url"]
-            export_row["tld"] = url["tld"]
-            if url["geoip"]:
-                export_row["geoip"] = url["geoip"]["names"]["en"]
+        if company["url"]:
+            url = company["url"][0]
+            if url["url"]:
+                export_row["url"] = url["url"]
+                export_row["tld"] = url["tld"]
+                if url["geoip"]:
+                    export_row["geoip"] = url["geoip"]["names"]["en"]
+            else:
+                export_row["url"] = None
+                export_row["tld"] = None
+                export_row["geoip"] = None
         else:
             export_row["url"] = None
             export_row["tld"] = None
-            export_row["geoip"] = None
-
+            export_row["geoip"] = None            
         #additional info
         # 
         # 
+
+        #source_info
+        for source_file in datasets.keys():
+            if source_file in company["source_files"]:
+                export_row[source_file] = ";".join([ str(x) for x in company["source_files"][source_file] ])
+            else:
+                export_row[source_file] = ""
+
         export.append(export_row)
 
     save_export(export)
