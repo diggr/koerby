@@ -1,0 +1,4 @@
+datasets:
+- gamekaishalinkshu500_loc.csv
+- gdri_company_loc.csv
+- ma_company_dataset.csv
