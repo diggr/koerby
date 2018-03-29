@@ -20,8 +20,19 @@ def save_export(export):
     filepath = os.path.join(DIR["data"], "company_dataset.csv")
     df.sort_values(by="name_en").to_csv(filepath)
 
+def load_source_datasets(datasets):
+    ds = {}
+    for dataset in datasets.keys():
+        filepath = os.path.join(DIR["pre"], dataset)
+        df = pd.read_csv(filepath)
+        ds[dataset] = json.loads(df.to_json(orient="records"))
+    return ds
+
+
 def main():
     datasets, config = load_export_config()
+
+    source_datasets = load_source_datasets(datasets)
 
     company_dataset_filepath = os.path.join(DIR["data"], "company_dataset.json")
     with open(company_dataset_filepath) as f:
@@ -73,17 +84,32 @@ def main():
         else:
             export_row["url"] = None
             export_row["tld"] = None
-            export_row["geoip"] = None            
-        #additional info
-        # 
-        # 
+            export_row["geoip"] = None         
 
+        #additional info
+        for source, fields in config.items():
+            for source_field, output_field in fields.items():
+                if source in company["source_files"]:
+
+                    source_data = []
+                    for source_id in company["source_files"][source]:
+                        if source_id:
+                            source_data.append(source_datasets[source][source_id][source_field])
+
+                    source_data = [ x for x in source_data if x]
+                    if source_data:
+                        export_row[output_field] = ";".join(source_data)
+                    else:
+                        export_row[output_field] = None
+                else:
+                    export_row[output_field] = None
+                
         #source_info
         for source_file in datasets.keys():
             if source_file in company["source_files"]:
                 export_row[source_file] = ";".join([ str(x) for x in company["source_files"][source_file] ])
             else:
-                export_row[source_file] = ""
+                export_row[source_file] = None
 
         export.append(export_row)
 
