@@ -30,7 +30,15 @@ def load_pre_files():
             yield dataset, filename
 
 def get_all_names(entry):
-    all_names = entry["name_en"] + entry["name_ja"]
+    if not entry["name_en"]:
+        name_en = []
+    else:
+        name_en = entry["name_en"]
+    if not entry["name_ja"]:
+        name_ja = []
+    else:
+        name_ja = entry["name_ja"]
+    all_names = name_en + name_ja
     return [ std(x) for x in all_names ]
 
 def std_url(url):
@@ -38,6 +46,7 @@ def std_url(url):
         return url.replace("http://", "").replace("https://", "").replace("/","")
     else:
         return None
+
 
 
 def get_match(company, company_dataset):
@@ -53,11 +62,12 @@ def get_match(company, company_dataset):
                         return entry
         #url
         if "url" in company:
-            all_entry_urls = [ std_url(x["url"]) for x in entry["url"] ]
-            if company["url"]:
-                if std_url(company["url"]) in all_entry_urls:
-                    #print("url match")
-                    return entry
+            if entry["url"]:
+                all_entry_urls = [ std_url(x["url"]) for x in entry["url"] ]
+                if company["url"]:
+                    if std_url(company["url"]) in all_entry_urls:
+                        #print("url match")
+                        return entry
 
         #titlestring
         all_entry_names = get_all_names(entry)
@@ -152,7 +162,10 @@ def add_to_entry(entry, company, filename, row_id):
     if "mobygames_od" in company:
         entry["mobygames_id"] = company["mobygames_id"]
     if "url" in company:
-        all_urls = [x["url"] for x in entry["url"]]
+        if entry["url"]:
+            all_urls = [x["url"] for x in entry["url"]]
+        else:
+            all_urls = []
         if company["url"] not in all_urls:
             entry["url"].append(get_url_information(company["url"]))
     if filename in entry["source_files"]:

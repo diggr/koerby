@@ -3,3 +3,4 @@ pre
 source
 test.py
 *.yml
+*.ipnb
