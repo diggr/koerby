@@ -7,7 +7,7 @@ from tqdm import tqdm
 from collections import Counter
 from utils.helper import is_country
 
-
+from kirby import CONFIG
 
 class CSVExporter(object):
     """
