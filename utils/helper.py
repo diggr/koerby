@@ -1,10 +1,19 @@
 import string
 import socket
 import json
+import re
 from geolite2 import geolite2
+from geopy.geocoders import GoogleV3
 
 PUNCT_TRANSTABLE = str.maketrans("","",".,:-〔〕'’*/!&?+")
 FORMS= [" sarl", " sa", " bv"," co ltd", " tec", " coltd", " limited", " ltd", " llc", " gmbh", " ltda", " corp", " inc", " srl"]
+
+
+def remove_html(t):
+    if t:
+        t = re.sub(r'<[^<]+?>', '', t)
+        t = t.strip()
+    return t
 
 def std(t):
     if t:
@@ -12,6 +21,13 @@ def std(t):
         t = t.translate(PUNCT_TRANSTABLE)
         for form in FORMS:
             t = t.replace(form, "")
+            
+        t = re.sub(r'\([^\()]+?\)', '', t)
+        t = re.sub(r'\[[^\[]]+?\]', '', t)
+
+        t = t.replace(" 株式会社", "")
+        t = t.strip()
+
     return t
 
 def top_level_domain(url):
@@ -41,4 +57,17 @@ def get_domain_dict():
     domain_dict = { x["fields"]["tld"]:x["fields"]["country"] for x in domains }
     return domain_dict
     
+
+def get_geolocation(address, google_api_key):
+    google_en = GoogleV3(google_api_key)
+    google_jp = GoogleV3(google_api_key, domain="maps.google.co.jp")
+    raise NotImplementedError
+
+
+def is_country(country):
+    if country in DOMAIN_DICT.values():
+        return True
+    else:
+        return False
+
 DOMAIN_DICT = get_domain_dict()

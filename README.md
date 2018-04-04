@@ -1,8 +1,6 @@
 # kirby
 
-Videogame companies information integration
-
-Pipline for integrating various video game company datasets (csv) into one combined dataset.
+Pipline/Framework for csv dataset integration
 
 
 ## Process:
