@@ -5,9 +5,8 @@ import pandas as pd
 from config import IDS, DIR
 from tqdm import tqdm
 from collections import Counter
-from utils.helper import is_country
 
-from kirby import CONFIG
+from .config import CONFIG
 
 IMPORT_DIR = CONFIG.dir["import"]
 DATA_DIR = CONFIG.dir["data"]
@@ -176,7 +175,7 @@ class CSVExporter(object):
                         all_data.append(entry["url"][0]["tld_country"])
                     if entry["url"][0]["geoip"]:
                         all_data.append(entry["url"][0]["geoip"]["names"]["en"])
-                all_data =  [ x for x in all_data if is_country(x)]
+                #all_data =  [ x for x in all_data if is_country(x)]
 
                 if len(all_data) == 0:
                     most_common = None
@@ -197,10 +196,3 @@ class CSVExporter(object):
             export_dataset.append(export_row)
 
         self._save_export(export_dataset)
-
-def main():
-    exporter = CSVExporter()
-
-
-if __name__ == "__main__":
-    main()

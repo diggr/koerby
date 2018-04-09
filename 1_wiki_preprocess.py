@@ -7,47 +7,25 @@ from utils.wiki import identify
 from utils.helper import remove_html
 from tqdm import tqdm
 
-def get_source_files():
-    for filename in os.listdir(DIR["source"]):
-        pre_filepath = os.path.join(DIR["pre"], filename)
-        if not os.path.exists(pre_filepath):
-            filepath = os.path.join(DIR["source"], filename)
-            df = pd.read_csv(filepath)
-            dataset = json.loads(df.to_json(orient="records"))
-            yield dataset, filename
+from kirby import CONFIG, CSVImporter
 
-def validate(dataset):
-    if not "name_en" in dataset[0] and not "name_ja" in dataset[0]:
-        print("[ERROR] CSV File must contain column 'name_en' or 'name_ja'")
-        return False
-    return True
-
-def save(dataset, filename):
-    filepath = os.path.join(DIR["pre"], filename)
-    df = pd.DataFrame(dataset)
-    df.to_csv(filepath, index=False)
-
-
+def wiki_identify(row):
+    wiki_link, wkp = None, None
+    if "name_en" in row:
+        row["name_en"] = remove_html(row["name_en"])
+        wiki_link, wkp = identify(row["name_en"], "en")
+    if not wkp:
+        if "name_ja" in row:
+            row["name_ja"] = remove_html(row["name_ja"])
+            wiki_link, wkp = identify(row["name_ja"], "ja")
+    
+    row["wiki_link"] = wiki_link
+    row["wkp"] = wkp
+    return row
 
 def main():
-    for dataset, filename in get_source_files():
-        print(filename)
-
-        if validate(dataset):
-            for row in tqdm(dataset):
-                wiki_link, wkp = None, None
-                if "name_en" in row:
-                    row["name_en"] = remove_html(row["name_en"])
-                    wiki_link, wkp = identify(row["name_en"], "en")
-                if not wkp:
-                    if "name_ja" in row:
-                        row["name_ja"] = remove_html(row["name_ja"])
-                        wiki_link, wkp = identify(row["name_ja"], "ja")
-                
-                row["wiki_link"] = wiki_link
-                row["wkp"] = wkp
-        
-            save(dataset, filename)
+    importer = CSVImporter(row_transform=wiki_identify)
+    importer.import_datasets()
 
 
 if __name__ == "__main__":

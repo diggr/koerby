@@ -6,6 +6,11 @@ import pandas as pd
 from tqdm import tqdm
 from config import DIR, IDS
 from utils.helper import std, get_geoip, top_level_domain, DOMAIN_DICT
+from kirby.csv_integrator import CSVIntegrator
+
+
+def main():
+    integrator = CSVIntegrator()
 
 def load_company_dataset():
     filepath = os.path.join(DIR["data"], "company_dataset.json")
@@ -187,7 +192,7 @@ def save_dataset_yaml(datasets):
         yaml.dump(datasets, f, default_flow_style=False)
 
 
-def main():
+def main2():
 
     dataset_yaml = {}
 
