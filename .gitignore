@@ -1,6 +1,10 @@
 data
-pre
 source
+source
+import
 test.py
+.ipynb_checkpoints
+__pycache__
 *.yml
-*.ipnb
+*.ipynb
+*.txt

@@ -1,6 +1,4 @@
 # kirby
 
-Simple Pipline/Framework for csv dataset integration
+Pipline/framework for csv dataset integration
 
-
-## Process:

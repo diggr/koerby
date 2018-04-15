@@ -11,7 +11,7 @@ def read_csv(filepath, sep=","):
 
 def write_csv(dataset, filepath):
     df = pd.DataFrame(dataset)
-    df.to_csv(filepath, index=False)
+    df.to_csv(filepath, index=False, encoding="utf-8")
     return 
 
 def csv_transform(columns, transformation):

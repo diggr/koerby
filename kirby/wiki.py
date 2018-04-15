@@ -1,7 +1,7 @@
 import requests
 import json
 import string
-from .helper import std
+#from .helper import std
 from SPARQLWrapper import SPARQLWrapper, JSON
 
 WIKI_SEARCH = "https://{lang}.wikipedia.org/w/api.php?action=opensearch&search={q}&format=json"
@@ -18,7 +18,7 @@ ASK
 """
 
 def wiki_search(q, lang):
-    resp = requests.get(WIKI_SEARCH.format(lang=lang, q=std(q)))
+    resp = requests.get(WIKI_SEARCH.format(lang=lang, q=q))
     results = json.loads(resp.text)
     full_results = {
         "lang": lang,

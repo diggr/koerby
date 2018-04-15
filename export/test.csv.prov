@@ -1,0 +1,139 @@
+{
+  "@context": {
+    "foaf": "http://xmlns.com/foaf/0.1/",
+    "pit_activity": "http://pit.diggr.link/act/",
+    "pit_agent": "http://pit.diggr.link/agent#",
+    "pit_entity": "http://pit.diggr.link/",
+    "prov": "http://www.w3.org/ns/prov#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#"
+  },
+  "@graph": [
+    {
+      "@id": "pit_entity:pit_e0c74dfadd1e490e8541f4b883521ecf",
+      "@type": "prov:Entity",
+      "prov:atLocation": "D:\\code\\kirby\\data\\company_dataset_matches.json",
+      "prov:wasAttributedTo": {
+        "@id": "pit_agent:kirby_0.1"
+      },
+      "prov:wasDerivedFrom": {
+        "@id": "pit_entity:pit_1d339b53d69840ff840caa7c4e9f9e4d"
+      },
+      "prov:wasGeneratedBy": {
+        "@id": "pit_activity:generate_matches_78b8f5940bb145a09bc8eadb0d6e0116"
+      }
+    },
+    {
+      "@id": "pit_entity:pit_8abf312ee7274b69add6c3d86cf483c8",
+      "@type": "prov:Entity",
+      "prov:atLocation": "D:\\code\\kirby\\data\\company_dataset_kirby.json",
+      "prov:wasAttributedTo": {
+        "@id": "pit_agent:kirby_0.1"
+      },
+      "prov:wasDerivedFrom": {
+        "@id": "pit_entity:pit_e0c74dfadd1e490e8541f4b883521ecf"
+      },
+      "prov:wasGeneratedBy": {
+        "@id": "pit_activity:generate_kirby_entries_6065826dde7c462fb94474b2a2d11c8a"
+      }
+    },
+    {
+      "@id": "pit_activity:generate_matches_78b8f5940bb145a09bc8eadb0d6e0116",
+      "@type": "prov:Activity",
+      "prov:endedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2018-04-15T18:59:01.029802"
+      },
+      "rdfs:label": "match datasets with config <[(['wkp'], <function main.<locals>.<lambda> at 0x000001EEF7468510>), (['url'], <function std_url at 0x000001EEF7468488>), (['name_en', 'name_ja'], <function std_company at 0x000001EEF7468400>)]>"
+    },
+    {
+      "@id": "pit_activity:build_kriby_source_rdf_c26ba7ae900c4ed885282c1ddff8753a",
+      "@type": "prov:Activity",
+      "prov:endedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2018-04-15T18:50:31.711657"
+      },
+      "rdfs:label": "Build source rdf dataset from source csv files"
+    },
+    {
+      "@id": "pit_entity:pit_e933936535df4b27990007152d544d0d",
+      "@type": "prov:Entity",
+      "prov:atLocation": "D:\\code\\kirby\\source\\gdri_company_loc.csv"
+    },
+    {
+      "@id": "pit_activity:generate_kirby_entries_6065826dde7c462fb94474b2a2d11c8a",
+      "@type": "prov:Activity",
+      "prov:endedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2018-04-15T19:49:04.731351"
+      },
+      "rdfs:label": "build kirby entries based on dataset matches"
+    },
+    {
+      "@id": "pit_entity:pit_04c8f7e263094f78b75e8cc099517835",
+      "@type": "prov:Entity",
+      "prov:atLocation": "D:\\code\\kirby\\source\\wiki_import.csv"
+    },
+    {
+      "@id": "pit_entity:pit_e32a8057c19a4408b57255f4035057ac",
+      "@type": "prov:Entity",
+      "prov:atLocation": "D:\\code\\kirby\\export\\test.csv",
+      "prov:wasAttributedTo": {
+        "@id": "pit_agent:kirby_0.1"
+      },
+      "prov:wasDerivedFrom": [
+        {
+          "@id": "pit_entity:pit_1d339b53d69840ff840caa7c4e9f9e4d"
+        },
+        {
+          "@id": "pit_entity:pit_8abf312ee7274b69add6c3d86cf483c8"
+        },
+        {
+          "@id": "pit_entity:pit_e0c74dfadd1e490e8541f4b883521ecf"
+        }
+      ],
+      "prov:wasGeneratedBy": {
+        "@id": "pit_activity:export_dataset_1866d35a2b8d4f579a4fc9fdbf604f78"
+      }
+    },
+    {
+      "@id": "pit_entity:pit_ed8be347f03b4bd19e76cfa6e4954193",
+      "@type": "prov:Entity",
+      "prov:atLocation": "D:\\code\\kirby\\source\\cesa_companies.csv"
+    },
+    {
+      "@id": "pit_agent:kirby_0.1",
+      "@type": "prov:Agent"
+    },
+    {
+      "@id": "pit_entity:pit_1d339b53d69840ff840caa7c4e9f9e4d",
+      "@type": "prov:Entity",
+      "prov:atLocation": "D:\\code\\kirby\\data\\company_dataset.json",
+      "prov:wasAttributedTo": {
+        "@id": "pit_agent:kirby_0.1"
+      },
+      "prov:wasDerivedFrom": [
+        {
+          "@id": "pit_entity:pit_e933936535df4b27990007152d544d0d"
+        },
+        {
+          "@id": "pit_entity:pit_ed8be347f03b4bd19e76cfa6e4954193"
+        },
+        {
+          "@id": "pit_entity:pit_04c8f7e263094f78b75e8cc099517835"
+        }
+      ],
+      "prov:wasGeneratedBy": {
+        "@id": "pit_activity:build_kriby_source_rdf_c26ba7ae900c4ed885282c1ddff8753a"
+      }
+    },
+    {
+      "@id": "pit_activity:export_dataset_1866d35a2b8d4f579a4fc9fdbf604f78",
+      "@type": "prov:Activity",
+      "prov:endedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2018-04-15T19:49:49.284246"
+      },
+      "rdfs:label": "export csv with export config <{'name': 'test.csv', 'properties': ['wkp', 'name_en', 'name_ja', 'url', 'address'], 'order_by': 'name_en'}>"
+    }
+  ]
+}
