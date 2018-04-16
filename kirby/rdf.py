@@ -12,11 +12,12 @@ from .csv import read_csv, write_csv
 from .utils import source_files
 from .pit import Provenance
 
+# KIRBY NAMESPACES
 KIRBY_ENTRY = "http://kirby.diggr.link/entry"
 KIRBY_DATASET = "http://kirby.diggr.link/dataset"
 KIRBY_PROP = Namespace("http://kirby.diggr.link/property/")
 
-# TYPES
+# KIRBY ENTITY TYPES
 KIRBY_CORE = Namespace("http://kirby.diggr.link/")
 SOURCE_DATASET = KIRBY_CORE.Dataset
 SOURCE_DATASET_ROW = KIRBY_CORE.DatasetRow
@@ -172,6 +173,17 @@ def generate_matches(match_config):
     prov.save()
 
 
+def find_matches(graph, row, matches):
+    old_len = len(matches)
+    matches += get_values(graph, row, KIRBY_PROP.matched_with)
+    matches = list(set(matches))
+    if old_len == len(matches):
+        return matches
+    for match in matches:
+        matches = find_matches(graph, match, matches)
+    return matches
+
+
 def generate_kirby_dataset():
     dataset_graph = load_rdf_dataset()
     matches_graph = load_rdf_dataset(filepath=MATCHES_FILEPATH)
@@ -189,7 +201,9 @@ def generate_kirby_dataset():
             kirby_graph.add( (kirby_entry_uri, KIRBY_PROP.contains, row ) )
             kirby_graph.add( (row, KIRBY_PROP.is_part_of, kirby_entry_uri ) )
             
-            matches = get_values(graph, row, KIRBY_PROP.matched_with)        
+            matches = []
+            #matches = get_values(graph, row, KIRBY_PROP.matched_with)    
+            matches = find_matches(graph, row, matches)
             for match in matches:
                 kirby_graph.add( (kirby_entry_uri, KIRBY_PROP.contains, match ) )
                 kirby_graph.add( (match, KIRBY_PROP.is_part_of, kirby_entry_uri ) )
