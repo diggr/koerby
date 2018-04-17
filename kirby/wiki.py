@@ -46,7 +46,6 @@ def check_entity_type(wkp, entities):
 def get_wkp(entity, lang="en"):
     """
     Returns the Wikidata ID for the Wikipedia entry :entity:
-    TODO: Wikidata redirect
     """
     rsp = requests.get(WKP_QUERY.format(lang=lang, entity=entity))
     results = json.loads(rsp.text)
@@ -67,7 +66,6 @@ def identify(name, lang, entities):
     lang = result["lang"]
     for entry in result["results"]:
         entity = entry.split("/")[-1]
-        #print(entity)
         wkp = get_wkp(entity, lang)
 
         if check_entity_type(wkp, entities):

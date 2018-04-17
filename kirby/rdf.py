@@ -152,7 +152,6 @@ def generate_matches(match_config):
             for properties, std_func in match_config:
                 for prop in properties:
                     values = get_values(graph, row, build_property_uri(prop))
-
                     matches += match_literal(graph, prop, values, std_func)
             
             skip = skip ^ set(matches)
