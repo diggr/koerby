@@ -1,16 +1,20 @@
 
 from kirby.rdf import transform_source_property, enrich_dataset
 from kirby.wiki import identify
-from kirby.utils import remove_html
+from kirby.utils import remove_html, std
 from kirby.config import PROV_AGENT, DATASET_FILEPATH
-from std_functions import std_company
 from kirby.pit import Provenance
 
+COMPANY_FORMS= [" sarl", " sa", " bv"," co ltd", " tec", " coltd", " limited", " ltd", " llc", " gmbh", " ltda", " corp", " inc", " srl", " 株式会社"]
 
 VG_ENTITIES = ["Q210167", "Q1137109"]
 
 def wiki_identify_en(name):
-    wiki_link, wkp = identify(std_company(name), "en", entities=VG_ENTITIES)
+    wiki_link, wkp = identify(
+        std(name, remove_strings=COMPANY_FORMS), 
+        "en", 
+        entities=VG_ENTITIES
+    )
     rv = {
         "wkp": [ wkp ],
         "wiki_link": [ wiki_link]
@@ -18,7 +22,11 @@ def wiki_identify_en(name):
     return rv
 
 def wiki_identify_ja(name):
-    wiki_link, wkp = identify(std_company(name), "ja", entities=VG_ENTITIES)
+    wiki_link, wkp = identify(
+        std(name, remove_strings=COMPANY_FORMS), 
+        "ja", 
+        entities=VG_ENTITIES
+    )
     rv = {
         "wkp": [ wkp ],
         "wiki_link": [ wiki_link]
