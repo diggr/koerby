@@ -22,7 +22,7 @@ KIRBY_CORE = Namespace("http://kirby.diggr.link/")
 SOURCE_DATASET = KIRBY_CORE.Dataset
 SOURCE_DATASET_ROW = KIRBY_CORE.DatasetRow
 
-
+# JSON-LD CONTEXT
 CONTEXT = {
     "rdf": str(RDF),
     "kirby": str(KIRBY_CORE),

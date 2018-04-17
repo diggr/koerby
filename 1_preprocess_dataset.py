@@ -7,8 +7,10 @@ from std_functions import std_company
 from kirby.pit import Provenance
 
 
+VG_ENTITIES = ["Q210167", "Q1137109"]
+
 def wiki_identify_en(name):
-    wiki_link, wkp = identify(std_company(name), "en")
+    wiki_link, wkp = identify(std_company(name), "en", entities=VG_ENTITIES)
     rv = {
         "wkp": [ wkp ],
         "wiki_link": [ wiki_link]
@@ -16,7 +18,7 @@ def wiki_identify_en(name):
     return rv
 
 def wiki_identify_ja(name):
-    wiki_link, wkp = identify(std_company(name), "ja")
+    wiki_link, wkp = identify(std_company(name), "ja", entities=VG_ENTITIES)
     rv = {
         "wkp": [ wkp ],
         "wiki_link": [ wiki_link]
