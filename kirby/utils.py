@@ -39,14 +39,12 @@ def std_url(url):
     Standardizes urls by removing protocoll and final slash.
     """
     if url:
-        #remove protocoll
         url = url.split("//")[-1]
-        #remove '/' at the end
-        if url[len(url)-1] == "/":
+        if url.endswith("/"):
             url = url[:len(url)-1]
     return url
 
-def std(s, lower=True, rm_punct=True, rm_bracket=True, remove_strings=None):
+def std(s, lower=True, rm_punct=True, rm_bracket=True, rm_spaces=False, rm_strings=None):
     if s:
         if lower:
             s = s.lower()
@@ -54,12 +52,15 @@ def std(s, lower=True, rm_punct=True, rm_bracket=True, remove_strings=None):
         if rm_punct:
             s = remove_punctuation(s)
         
-        if remove_strings:
-            for form in remove_strings:
+        if rm_strings:
+            for form in rm_strings:
                 s = s.replace(form.lower(), "")
         
         if rm_bracket:
             s = remove_bracketed_text(s)
+
+        if rm_spaces:
+            s = s.replace(" ", "")
 
         s = s.strip()
     return s

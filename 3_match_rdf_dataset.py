@@ -4,7 +4,7 @@ from kirby.utils import std, std_url
 COMPANY_FORMS= [" sarl", " sa", " bv"," co ltd", " tec", " coltd", " limited", " ltd", " llc", " gmbh", " ltda", " corp", " inc", " srl", " 株式会社"]
 
 def costum_std(*args, **kwargs):
-    s = std(*args, **kwargs, remove_strings=COMPANY_FORMS)
+    s = std(*args, **kwargs, rm_spaces=True, rm_strings=COMPANY_FORMS)
     return s
 
 def main():

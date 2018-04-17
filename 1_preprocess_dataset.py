@@ -11,7 +11,7 @@ VG_ENTITIES = ["Q210167", "Q1137109"]
 
 def wiki_identify_en(name):
     wiki_link, wkp = identify(
-        std(name, remove_strings=COMPANY_FORMS), 
+        std(name, rm_strings=COMPANY_FORMS), 
         "en", 
         entities=VG_ENTITIES
     )
@@ -23,7 +23,7 @@ def wiki_identify_en(name):
 
 def wiki_identify_ja(name):
     wiki_link, wkp = identify(
-        std(name, remove_strings=COMPANY_FORMS), 
+        std(name, rm_strings=COMPANY_FORMS), 
         "ja", 
         entities=VG_ENTITIES
     )
