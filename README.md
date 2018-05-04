@@ -1,4 +1,4 @@
-# kirby
+# kørbyi
 
 Pipline/framework for csv dataset integration
 

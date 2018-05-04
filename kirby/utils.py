@@ -45,6 +45,14 @@ def std_url(url):
     return url
 
 def std(s, lower=True, rm_punct=True, rm_bracket=True, rm_spaces=False, rm_strings=None):
+    """
+    String stardardization function
+    :lower:      lower case
+    :rm_punct:   remove punctuation
+    :rm_bracket: remove brackets () [] 
+    :rm_spaces:  remove white spaces
+    :rm_stirng:  list of substrings to be removed from string before comparison
+    """
     if s:
         if lower:
             s = s.lower()
@@ -70,6 +78,8 @@ def source_files():
     Lists all .csv files in source directory.
     """
     for filename in os.listdir(SOURCE_DIR):
-        if filename.endswith(".csv"):
+        if filename.endswith(".csv") or filename.endswith(".json"):
+            filetype = filename.split(".")[-1]
             filepath = os.path.join(SOURCE_DIR, filename)
-            yield filepath, filename
+            yield filepath, filename, filetype
+

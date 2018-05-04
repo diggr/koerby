@@ -2,7 +2,7 @@ from kirby.rdf import generate_rdf_dataset, load_rdf_dataset, match_literal, gen
 from kirby.config import init
 
 def main():
-    init()
+    #init()
     generate_rdf_dataset()
 
 if __name__ == "__main__":

@@ -2,10 +2,14 @@ import rdflib
 import json
 import os
 import uuid
+import hashlib
+import multiprocessing
 from collections import defaultdict
 from tqdm import tqdm
 from rdflib import Graph, Namespace, URIRef, Literal
 from rdflib.namespace import RDF, FOAF, RDFS
+from datetime import datetime
+
 
 from .config import DATA_DIR, PROJECT_NAME, DATASET_FILEPATH, MATCHES_FILEPATH, KIRBY_FILEPATH, EXPORT_DIR, PROV_AGENT
 from .csv import read_csv, write_csv
@@ -16,11 +20,13 @@ from .pit import Provenance
 KIRBY_ENTRY = "http://kirby.diggr.link/entry"
 KIRBY_DATASET = "http://kirby.diggr.link/dataset"
 KIRBY_PROP = Namespace("http://kirby.diggr.link/property/")
+KIRBY_MATCH_NS = Namespace("http://kirby.diggr.link/match/")
 
 # KIRBY ENTITY TYPES
 KIRBY_CORE = Namespace("http://kirby.diggr.link/")
 SOURCE_DATASET = KIRBY_CORE.Dataset
 SOURCE_DATASET_ROW = KIRBY_CORE.DatasetRow
+KIRBY_MATCH = KIRBY_CORE.Match
 
 # JSON-LD CONTEXT
 CONTEXT = {
@@ -49,14 +55,14 @@ def build_property_uri(property_name):
 
 def csv2rdf(filepath, name):
     """
-    Convertes csv file into an rdf graph (using standard kirby namespace)
+    Convertes csv file into an rdf graph (using standard koerby namespace)
     """
     print("csv2rdf <{}> ...".format(name))
     graph = Graph()
 
     dataset = read_csv(filepath)
     dataset_uri = build_dataset_uri(name)
-    graph.add( (URIRef("http://kirby.diggr.link/dataset/wiki"), RDF.type, SOURCE_DATASET) )
+    graph.add( (dataset_uri, RDF.type, SOURCE_DATASET) )
 
     for row_nr, row in tqdm(enumerate(dataset)):
         row_uri = build_dataset_row_uri(name, row_nr)
@@ -70,16 +76,46 @@ def csv2rdf(filepath, name):
                     graph.add( (row_uri, property_uri, Literal(value)) )
     return graph
 
+def json2rdf(filepath, name):
+    """
+    Converts (flat) json file into an rdf graph (using standard koerby namespace)
+    """
+    print("json2rdf <{}> ...".format(name))
+    graph = Graph()
+
+    dataset = json.load(open(filepath))
+    dataset_uri = build_dataset_uri(name)
+    graph.add( (dataset_uri, RDF.type, SOURCE_DATASET) )
+
+    for row_nr, row in tqdm(dataset.items()):
+        row_uri = build_dataset_row_uri(name, row_nr)
+        graph.add( (row_uri, RDF.type, KIRBY_CORE.DatasetRow) )
+        graph.add( (dataset_uri, KIRBY_PROP.contains, row_uri) )
+        graph.add( (row_uri, KIRBY_PROP.is_part_of, dataset_uri) )
+        for key, value in row.items():
+            property_uri = build_property_uri(key)
+            if type(value) == list:
+                for v in value:
+                    if v:
+                        graph.add( (row_uri, property_uri, Literal(v)) )
+            else:
+                if value:
+                    graph.add( (row_uri, property_uri, Literal(value)) )
+
+    return graph
 
 def generate_rdf_dataset():
     """
     Builds an RDF dataset for all csv files in source directory. 
-    Serializes result into data directory.
+    Serializes result as json-ld file into data directory.
     """
     graph = Graph()
 
-    for filepath, file_name in source_files():
-        graph += csv2rdf(filepath, file_name.replace(".csv", ""))
+    for filepath, file_name, file_type in source_files():
+        if file_type == "csv":
+            graph += csv2rdf(filepath, file_name.replace(".csv", ""))
+        elif file_type == "json":
+            graph += json2rdf(filepath, file_name.replace(".json", ""))
     
     dataset_file = os.path.join(DATA_DIR, "{}.json".format(PROJECT_NAME))
     with open(dataset_file, "wb") as f:
@@ -91,9 +127,10 @@ def generate_rdf_dataset():
         agent=PROV_AGENT, 
         activity="build_dataset_rdf", 
         description="Build source rdf dataset from source csv files")
-    prov.add_sources([ fp for fp, fn in source_files() ])
+    prov.add_sources([ fp for fp, fn, ft in source_files() ])
     prov.save()
-    
+
+
 def load_rdf_dataset(filepath=DATASET_FILEPATH):
     """
     Loads RDF dataset and returns rdflib graph object.
@@ -120,6 +157,13 @@ def match_literal(graph, prop, values, std=None):
         matches = set( [x[0] for x in candidates if std(x[1]) in values] )
     return list(matches)
 
+def match_cmp(graph, candidate, props, values, cmp=None):
+    """
+    Compares values of properties :props: of all candidates with :values: using a costum compare function.
+    Returns match probability between 0 and 1.
+    """
+    raise NotImplementedError
+
 def get_values(graph, subject, prop):
     """
     Return a list of all values of property :prop: for subject uri :subject:
@@ -133,43 +177,157 @@ def iter_by_type(graph, rdf_type):
     for row in results:
         yield row[0]  
 
+def get_uris_by_type(graph, rdf_type):
+    results = graph.triples( (None, RDF.type, rdf_type) )
+    return [ x[0] for x in results ]
 
-def generate_matches(match_config):
+
+def iter_deterministic_rules(ruleset):
+    if "deterministic" in ruleset:
+        for det_rule in ruleset["deterministic"]:
+            yield det_rule
+
+def build_match_uri(row, match):
+    comb = sorted([str(row), str(match)])
+    uid = hashlib.md5("".join(comb).replace(KIRBY_DATASET, "").encode("utf-8")).hexdigest()
+
+    return KIRBY_MATCH_NS["m_{}".format(uid)]
+
+
+def get_match_uri_value(graph, row, match):
+
+    query = """
+    SELECT ?match ?value
+    WHERE {{
+        ?match <http://kirby.diggr.link/property/matched> <{match_1}> ;
+                <http://kirby.diggr.link/property/matched> <{match_2}> .
+        ?match <http://kirby.diggr.link/property/has_match_value> ?value .
+    }}
+    """
+
+    res = graph.query(query.format(match_1=str(row), match_2=str(match)))
+    if len(res) > 0:
+        print(res[0])
+        return res[0]
+    else:
+        return None, None
+
+def update_match_value(graph, match_uri, old_value, new_value):
+    graph.remove( (match_uri, KIRBY_PROP.has_match_value, Literal(old_value)) )
+    graph.add( (match_uri, KIRBY_PROP.has_match_value, Literal(new_value)) )
+
+
+def add_match_to_graph(graph, row, match, value):
+
+    match_uri = build_match_uri(row, match)
+    graph.add( (match_uri, RDF.type, KIRBY_MATCH) ) 
+    graph.add( (match_uri, KIRBY_PROP.matched, row) )
+    graph.add( (match_uri, KIRBY_PROP.matched, match) )
+    graph.add( (row, KIRBY_PROP.belongs_to_match, match_uri) )
+    graph.add( (match, KIRBY_PROP.belongs_to_match, match_uri) )
+    graph.add( (match_uri, KIRBY_PROP.has_match_value, Literal(value)) )
+
+
+def start_generate_matches(match_config):
+
+    step = 10000
+    offset = 0
+    print(datetime.now().isoformat())
+    print("load dataset ...")
+    graph = load_rdf_dataset()
+    all_rows = get_uris_by_type(graph, SOURCE_DATASET_ROW)
+
+    match_graph = Graph()
+
+
+    print("start matching process ...")
+    # threads=[]
+    jobs = []
+    pipe_list = []
+    for i in range(8):
+        recv_end, send_end = multiprocessing.Pipe(False)
+        chunk = all_rows[offset:(offset+step)]
+        p = multiprocessing.Process(target=generate_matches, args=(match_config, chunk, graph, i, send_end))
+        jobs.append(p)
+        pipe_list.append(recv_end)
+        p.start()
+        offset+=step
+    
+    for receiver in pipe_list:
+        match_graph += receiver.recv()
+
+    for proc in jobs:
+        proc.join()
+    
+    dataset_file = os.path.join(DATA_DIR, "{}_matches.json".format(PROJECT_NAME))
+    with open(MATCHES_FILEPATH, "wb") as f:
+        f.write(match_graph.serialize(format="json-ld", context=CONTEXT))
+
+    # #add provenance file
+    # prov = Provenance(MATCHES_FILEPATH)
+    # prov.add(agent=PROV_AGENT, activity="generate_matches", description="match datasets with config <{}>".format(match_config))
+    # prov.add_sources([ DATASET_FILEPATH ])
+    # prov.save()
+
+    print(datetime.now().isoformat())
+    print( len([x for x in match_graph.triples( (None, None, None) ) ]) )
+
+def generate_matches(match_config, dataset, graph, thread_no, send_end):
     """
     Builds a graph conataining matches based on the rules defined in :matching_config: .
     """
-    skip = set()
+    skip = []
 
-    graph = load_rdf_dataset()
+    #print("finding matches ...")
     match_graph = Graph()
-    print("finding matches ...")
-    for row in iter_by_type(graph, SOURCE_DATASET_ROW):
-        #print(row)
-        if row not in skip:
-            
-            matches = []
 
-            for properties, std_func in match_config:
-                for prop in properties:
-                    values = get_values(graph, row, build_property_uri(prop))
-                    matches += match_literal(graph, prop, values, std_func)
+    for i, row in enumerate(dataset):
+        #print(row)
+        print("process {} >> iteration {} / {} ".format(thread_no, i, len(dataset)))
+
+        #apply match rules
+        for ruleset in match_config:
+
+            match_candidates = []
+            #apply deterministic rules to find match candidates
+            for deter_rule in iter_deterministic_rules(ruleset):
+
+                for prop in deter_rule["fields"]:
+                    values = [ str(x) for x in get_values(graph, row, build_property_uri(prop)) ]
+                    match_candidates += match_literal(graph, prop, values, deter_rule["std_func"])
             
-            skip = skip ^ set(matches)
-            for match in set(matches):
-                if str(row) != str(match): 
-                    match_graph.add( (row, KIRBY_PROP.matched_with, match) )
-                    match_graph.add( (match, KIRBY_PROP.matched_with, row) )
-                    print(row, match)
-        
-    #dataset_file = os.path.join(DATA_DIR, "{}_matches.json".format(DATASET_NAME))
-    with open(MATCHES_FILEPATH, "wb") as f:
-        f.write(match_graph.serialize(format="json-ld", context=CONTEXT))
-    
-    #add provenance file
-    prov = Provenance(MATCHES_FILEPATH)
-    prov.add(agent=PROV_AGENT, activity="generate_matches", description="match datasets with config <{}>".format(match_config))
-    prov.add_sources([ DATASET_FILEPATH ])
-    prov.save()
+            #apply probabilistic rules ot find match probability value
+            matches = []
+            #print(values)
+            #print(len(match_candidates))
+            match_candidates = [ x for x in match_candidates if x not in skip ]
+
+            if "probabilistic" in ruleset:
+                cmp_func = ruleset["probabilistic"]["cmp_func"]
+                values = []
+                for prop in ruleset["probabilistic"]["fields"]:
+                    values += [ str(x) for x in get_values(graph, row, build_property_uri(prop)) ]
+                #print(values)
+
+            for candidate in set(match_candidates):
+                if candidate != row:
+                    #if no probabilitic rule is set, all candidtes receive match value 1 (perfect match)
+                    if not "probabilistic" in ruleset:
+                        #print("\t matched with {}".format(candidate))
+                        add_match_to_graph(match_graph, row, candidate, 1)
+                        matches.append(candidate)
+                    else:
+                        candidate_values = []
+                        for prop in ruleset["probabilistic"]["fields"]:
+                            candidate_values += [ str(x) for x in get_values(graph, candidate, build_property_uri(prop)) ]
+
+                        cmp_value = cmp_func(values, candidate_values)
+
+                        if cmp_value > 0.7:
+                            add_match_to_graph(match_graph, row, candidate, cmp_value)
+                            
+            skip.append(row)
+    send_end.send(match_graph)
 
 
 def find_matches(graph, row, matches):
@@ -301,9 +459,7 @@ def transform_source_property(prop, transform_func):
     prop_uri = build_property_uri(prop)
     graph = load_rdf_dataset()
     for sbj, obj in tqdm(iter_property_values(graph, build_property_uri(prop))):
-        #print(sbj, obj)
         new_value = transform_func(str(obj))
-        #print(new_value)
         graph.remove( (sbj, prop_uri, obj ) )
         graph.add( (sbj, prop_uri, Literal(new_value)) )
     

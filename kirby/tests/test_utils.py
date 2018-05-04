@@ -1,5 +1,5 @@
 import pytest
-from ..utils import remove_html, remove_punctuation, std_url, std
+from ..utils import remove_html, remove_punctuation, std_url, std, remove_bracketed_text
 
 
 
@@ -27,6 +27,15 @@ def test_remove_html(input_string, expected):
 ])
 def test_remove_punctuation(input_string, expected):
     assert remove_punctuation(input_string) == expected
+
+
+
+#test remove bracketed text
+@pytest.mark.parametrize("input_string, expected", [
+    ("test (Test)", "test")
+])
+def test_remove_bracketed_text(input_string, expected):
+    assert remove_bracketed_text(input_string) == expected
 
 
 

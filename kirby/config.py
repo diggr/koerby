@@ -20,15 +20,15 @@ def init():
     """
     Creates directories specified in config.yml.
     """
-    for dir_ in CONFIG.dir.values():
+    for dir_ in CONFIG["directories"].values():
         if not os.path.exists(dir_):
             os.makedirs(dir_)
 
 CONFIG = load_config()
 
-EXPORT_DIR = CONFIG["folders"]["export"]
-SOURCE_DIR = CONFIG["folders"]["source"]
-DATA_DIR = CONFIG["folders"]["data"]
+EXPORT_DIR = CONFIG["directories"]["export"]
+SOURCE_DIR = CONFIG["directories"]["source"]
+DATA_DIR = CONFIG["directories"]["data"]
 PROJECT_NAME = CONFIG["project"]["name"]
 
 DATASET_FILEPATH = os.path.join(DATA_DIR, "{}.json".format(PROJECT_NAME))
