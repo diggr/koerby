@@ -22,6 +22,8 @@ REMOVE_TM = ["™","®","(TM)", "(R)"]
 ROMAN_NUMERAL_REGEX = r'\b(M{1,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})|M{0,4}(CM|C?D|D?C{1,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})|M{0,4}(CM|CD|D?C{0,3})(XC|X?L|L?X{1,3})(IX|IV|V?I{0,3})|M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|I?V|V?I{1,3}))\b'
 NUMBERING_REGEX = r'(\d+\.\d+|\d+)'
 
+NUMBERING_RE = re.compile(NUMBERING_REGEX)
+ROMAN_NUMERAL_RE = re.compile(ROMAN_NUMERAL_REGEX)
 
 def load_excluded_titles():
     """
@@ -93,7 +95,7 @@ def _get_position(a, n):
 
 def _extract_roman_numerals(a):
     """ extracts all roman numerals in string :a:, including their position and numerical value """
-    rv = re.findall(ROMAN_NUMERAL_REGEX, a)
+    rv = ROMAN_NUMERAL_RE.findall(a)
     rv = [no[0] for no in rv ]
 
     numbers = []
@@ -115,7 +117,7 @@ def _extract_numbers(a):
     if number is identified as year, only the last two digits get set as value
     """
     
-    rv = re.findall(NUMBERING_REGEX, a)
+    rv = NUMBERING_RE.findall(a)
 
     numbers = []
     
@@ -148,7 +150,7 @@ def extract_all_numbers(a):
     """ returns all numbers (roman and arabic) in string :a: """
 
     numbers = _extract_numbers(a) + _extract_roman_numerals(a)
-    sorted_numbers = sorted(numbers, key=lambda x: x["position"][1])
+    sorted_numbers = sorted(numbers, key=lambda x: -x["position"][1])
 
     return sorted_numbers
 

@@ -35,13 +35,13 @@ def _pre_processing(a):
         a = remove_tm(a)
         a = a.replace("Ⅱ", "II")
         a = a.split("(")[0]
-        a = a.replace("〔", "").replace("〕","").strip()  
+        a = a.replace("〔", "").replace("〕","")
 
         for series in REMOVE_SERIES:
             if series in a:
                 a = a.replace(series+" Series","")
                 break
-    return a
+    return a.strip()
 
 def _get_platforms(platform_name):
     """check if platform group exists for :platform_name: and returns list of possible platforms"""
@@ -142,7 +142,7 @@ def link_titles(titles_a,titles_b, rules=ALL_RULES):
         a = _pre_processing(a)
         b = _pre_processing(b)         
 
-        rules = [first_letter_rule, numbering_rule]
+        #rules = [first_letter_rule, numbering_rule]
 
         if a and b:
             # weight = 0

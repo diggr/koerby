@@ -3,13 +3,14 @@ import json
 import os
 import uuid
 import hashlib
+import timeit
 import multiprocessing
 from collections import defaultdict
 from tqdm import tqdm
 from rdflib import Graph, Namespace, URIRef, Literal
 from rdflib.namespace import RDF, FOAF, RDFS
 from datetime import datetime
-
+import random
 
 from .config import DATA_DIR, PROJECT_NAME, DATASET_FILEPATH, MATCHES_FILEPATH, KIRBY_FILEPATH, EXPORT_DIR, PROV_AGENT
 from .csv import read_csv, write_csv
@@ -170,7 +171,8 @@ def get_values(graph, subject, prop):
     """
     #prop_uri = build_property_uri(prop)
     results = graph.triples( (subject, prop, None) )
-    return [ x[2] for x in results]
+    return [ str(x[2]) for x in results]
+
 
 def iter_by_type(graph, rdf_type):
     results = graph.triples( (None, RDF.type, rdf_type) )
@@ -272,6 +274,26 @@ def start_generate_matches(match_config):
     print(datetime.now().isoformat())
     print( len([x for x in match_graph.triples( (None, None, None) ) ]) )
 
+
+# def wrapper(func, *args, **kwargs):
+#     def wrapped():
+#         return func(*args, **kwargs)
+#     return wrapped
+
+# def time_get_values():
+#     print("load dataset graph")
+#     graph = load_rdf_dataset()
+#     #print("select random data row")
+#     #all_rows = get_uris_by_type(graph, SOURCE_DATASET_ROW)
+#     #row = random.choice(all_rows)
+#     print("time get values function")
+#     row = URIRef("http://kirby.diggr.link/dataset/giantbomb/3030-25546")
+#     wrapped_func = wrapper(get_values, graph, row, build_property_uri("platforms"))
+#     wrapped_func2 = wrapper(get_values2, graph, row, build_property_uri("platforms"))
+#     print(timeit.timeit(wrapped_func, number=50))
+#     print(timeit.timeit(wrapped_func2, number=50))
+
+
 def generate_matches(match_config, dataset, graph, thread_no, send_end):
     """
     Builds a graph conataining matches based on the rules defined in :matching_config: .
@@ -282,44 +304,40 @@ def generate_matches(match_config, dataset, graph, thread_no, send_end):
     match_graph = Graph()
 
     for i, row in enumerate(dataset):
-        #print(row)
-        print("process {} >> iteration {} / {} ".format(thread_no, i, len(dataset)))
+
+        start_time = timeit.default_timer()
 
         #apply match rules
         for ruleset in match_config:
 
             match_candidates = []
+            values = []
+
             #apply deterministic rules to find match candidates
             for deter_rule in iter_deterministic_rules(ruleset):
 
                 for prop in deter_rule["fields"]:
-                    values = [ str(x) for x in get_values(graph, row, build_property_uri(prop)) ]
-                    match_candidates += match_literal(graph, prop, values, deter_rule["std_func"])
+                    prop_values = get_values(graph, row, build_property_uri(prop))
+                    match_candidates += match_literal(graph, prop, prop_values, deter_rule["std_func"])
+                    values += prop_values
             
             #apply probabilistic rules ot find match probability value
             matches = []
-            #print(values)
-            #print(len(match_candidates))
             match_candidates = [ x for x in match_candidates if x not in skip ]
 
             if "probabilistic" in ruleset:
                 cmp_func = ruleset["probabilistic"]["cmp_func"]
-                values = []
-                for prop in ruleset["probabilistic"]["fields"]:
-                    values += [ str(x) for x in get_values(graph, row, build_property_uri(prop)) ]
-                #print(values)
-
+ 
             for candidate in set(match_candidates):
                 if candidate != row:
                     #if no probabilitic rule is set, all candidtes receive match value 1 (perfect match)
                     if not "probabilistic" in ruleset:
-                        #print("\t matched with {}".format(candidate))
                         add_match_to_graph(match_graph, row, candidate, 1)
                         matches.append(candidate)
                     else:
                         candidate_values = []
                         for prop in ruleset["probabilistic"]["fields"]:
-                            candidate_values += [ str(x) for x in get_values(graph, candidate, build_property_uri(prop)) ]
+                            candidate_values += get_values(graph, candidate, build_property_uri(prop))
 
                         cmp_value = cmp_func(values, candidate_values)
 
@@ -327,6 +345,16 @@ def generate_matches(match_config, dataset, graph, thread_no, send_end):
                             add_match_to_graph(match_graph, row, candidate, cmp_value)
                             
             skip.append(row)
+
+        stop_time = timeit.default_timer()
+
+        #print("process {} >> iteration {} / {}: \t {} \t\t {} ".format(thread_no, i, len(dataset), stop_time-start_time), ", ".join(values))
+        if stop_time - start_time > 10:
+            print("process {} >> iteration {} / {}: \t {} \t\t {} ".format(thread_no, i, len(dataset), stop_time-start_time, ", ".join(values)))
+        else:
+            print("process {} >> iteration {} / {}: \t {}".format(thread_no, i, len(dataset), stop_time-start_time))
+        #print(stop_time-start_time)
+
     send_end.send(match_graph)
 
 
