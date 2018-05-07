@@ -235,23 +235,28 @@ def add_match_to_graph(graph, row, match, value):
 
 
 def start_generate_matches(match_config):
+    """
+    Splits dataset into n (= :PROCESS_COUNT: ) chunks and starts
+    a matching process for each count
+    """
+    match_graph = Graph()
 
-    #step = 25000
-    offset = 0
     print(datetime.now().isoformat())
     print("load dataset ...")
     graph = load_rdf_dataset()
     all_rows = get_uris_by_type(graph, SOURCE_DATASET_ROW)
 
-    match_graph = Graph()
-
-    step = math.ceil(len(all_rows)/PROCESS_COUNT)
-
     print("start matching process ...")
-    # threads=[]
+
+    #multiprocessing setup
+    offset = 0
+    step = math.ceil(len(all_rows)/PROCESS_COUNT)
+    #step = 500
+
     jobs = []
     pipe_list = []
 
+    #start multiprocesses
     for i in range(PROCESS_COUNT):
         recv_end, send_end = multiprocessing.Pipe(False)
         chunk = all_rows[offset:(offset+step)]
@@ -261,44 +266,97 @@ def start_generate_matches(match_config):
         p.start()
         offset+=step
     
+    #receive results from multiprocessing
     for receiver in pipe_list:
         match_graph += receiver.recv()
 
+    #wait until all processes have finished
     for proc in jobs:
         proc.join()
     
-    dataset_file = os.path.join(DATA_DIR, "{}_matches.json".format(PROJECT_NAME))
+    #write results
+    #dataset_file = os.path.join(DATA_DIR, "{}_matches.ttl".format(PROJECT_NAME))
     with open(MATCHES_FILEPATH, "wb") as f:
         f.write(match_graph.serialize(format="json-ld", context=CONTEXT))
 
-    # #add provenance file
-    # prov = Provenance(MATCHES_FILEPATH)
-    # prov.add(agent=PROV_AGENT, activity="generate_matches", description="match datasets with config <{}>".format(match_config))
-    # prov.add_sources([ DATASET_FILEPATH ])
-    # prov.save()
+    #add provenance file
+    prov = Provenance(MATCHES_FILEPATH)
+    prov.add(agent=PROV_AGENT, activity="generate_matches", description="match datasets with config <{}>".format(match_config))
+    prov.add_sources([ DATASET_FILEPATH ])
+    prov.save()
 
     print(datetime.now().isoformat())
-    print( len([x for x in match_graph.triples( (None, None, None) ) ]) )
+    #print( len([x for x in match_graph.triples( (None, None, None) ) ]) )
 
 
-# def wrapper(func, *args, **kwargs):
-#     def wrapped():
-#         return func(*args, **kwargs)
-#     return wrapped
+def get_best_match_value(matches_graph, match):
+    best_match_values = [ float(x) for x in get_values(matches_graph, match, KIRBY_PROP.has_match_value) ]
+    if len(best_match_values) > 0:
+        return max(best_match_values)
+    else:
+        return None
 
-# def time_get_values():
-#     print("load dataset graph")
-#     graph = load_rdf_dataset()
-#     #print("select random data row")
-#     #all_rows = get_uris_by_type(graph, SOURCE_DATASET_ROW)
-#     #row = random.choice(all_rows)
-#     print("time get values function")
-#     row = URIRef("http://kirby.diggr.link/dataset/giantbomb/3030-25546")
-#     wrapped_func = wrapper(get_values, graph, row, build_property_uri("platforms"))
-#     wrapped_func2 = wrapper(get_values2, graph, row, build_property_uri("platforms"))
-#     print(timeit.timeit(wrapped_func, number=50))
-#     print(timeit.timeit(wrapped_func2, number=50))
 
+def filter_matches():
+    """
+    Implements perfect match filter
+    """
+
+    print("load source graph ...")
+    graph = load_rdf_dataset()
+    print("load matches graph ...")
+    matches_graph = load_rdf_dataset(filepath=MATCHES_FILEPATH)
+    #filepath = os.path.join(DATA_DIR, "{}_matches.ttl".format(PROJECT_NAME))
+    # with open(MATCHES_FILEPATH) as f:
+    #     data = f.read()
+    # matches_graph = Graph().parse(data=data, format="turtle")
+
+    print("applying perfect match filter ...")
+    deleted_matches = []
+    for row in iter_by_type(graph, SOURCE_DATASET_ROW):
+        #get all matches containing :row:
+        all_matches = [ x[2] for x in matches_graph.triples( (row, KIRBY_PROP.belongs_to_match, None) ) ]
+
+        for match in all_matches:
+            #get hightes match value
+            best_match_value = get_best_match_value(matches_graph, match)
+            #print(best_match_value)
+                
+            #if perfect match, check if lesser matching within the same dataset exists
+            if best_match_value == 1:
+                #get other match row
+                other_row = [ x[2] for x in matches_graph.triples( (match, KIRBY_PROP.matched, None) ) if x[2] != row ][0]
+                
+                #get other match row dataset name
+                other_dataset = [ x[2] for x in graph.triples( (other_row, KIRBY_PROP.is_part_of, None) ) ][0]
+                
+                #remove all matche under 1 if other row is from the same dataset
+                for match_candidate in all_matches:
+                    if match != match_candidate and match_candidate not in deleted_matches:
+                        
+                        #get remove candidate row uri
+                        candidate_other_row = [ x[2] for x in matches_graph.triples( (match_candidate, KIRBY_PROP.matched, None) ) if x[2] != row ][0]
+                        #get remove candidate dataset uri
+                        candidate_other_dataset = [ x[2] for x in graph.triples( (candidate_other_row, KIRBY_PROP.is_part_of, None) ) ][0]    
+                        
+                        #check if remove candidate belongs to same dataset as other row uri from current match
+                        if candidate_other_dataset == other_dataset:
+                            candidate_best_match_value = get_best_match_value(matches_graph, match_candidate)
+                            
+                            #delete remove candidate from graph if match value is lower than 1.0
+                            if candidate_best_match_value < 1:
+                                matches_graph.remove( (match_candidate, None, None) )
+                                deleted_matches.append(match_candidate)
+                                print("\t removed match <{}>".format(match_candidate))
+    
+    #save filtered matches
+    with open(MATCHES_FILEPATH, "wb") as f:
+        f.write(matches_graph.serialize(format="json-ld", context=CONTEXT))
+
+    #add provenance file
+    prov = Provenance(MATCHES_FILEPATH)
+    prov.add(agent=PROV_AGENT, activity="filter_matches", description="applied perfect match filter")
+    prov.save()
 
 def generate_matches(match_config, dataset, graph, thread_no, send_end):
     """
@@ -329,7 +387,7 @@ def generate_matches(match_config, dataset, graph, thread_no, send_end):
             
             #apply probabilistic rules ot find match probability value
             matches = []
-            match_candidates = [ x for x in match_candidates if x not in skip ]
+            #match_candidates = [ x for x in match_candidates if x not in skip ]
 
             if "probabilistic" in ruleset:
                 cmp_func = ruleset["probabilistic"]["cmp_func"]
