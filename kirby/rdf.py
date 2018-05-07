@@ -5,6 +5,7 @@ import uuid
 import hashlib
 import timeit
 import multiprocessing
+import math
 from collections import defaultdict
 from tqdm import tqdm
 from rdflib import Graph, Namespace, URIRef, Literal
@@ -16,6 +17,9 @@ from .config import DATA_DIR, PROJECT_NAME, DATASET_FILEPATH, MATCHES_FILEPATH, 
 from .csv import read_csv, write_csv
 from .utils import source_files
 from .pit import Provenance
+
+
+PROCESS_COUNT = 8
 
 # KIRBY NAMESPACES
 KIRBY_ENTRY = "http://kirby.diggr.link/entry"
@@ -232,7 +236,7 @@ def add_match_to_graph(graph, row, match, value):
 
 def start_generate_matches(match_config):
 
-    step = 10000
+    #step = 25000
     offset = 0
     print(datetime.now().isoformat())
     print("load dataset ...")
@@ -241,12 +245,14 @@ def start_generate_matches(match_config):
 
     match_graph = Graph()
 
+    step = math.ceil(len(all_rows)/PROCESS_COUNT)
 
     print("start matching process ...")
     # threads=[]
     jobs = []
     pipe_list = []
-    for i in range(8):
+
+    for i in range(PROCESS_COUNT):
         recv_end, send_end = multiprocessing.Pipe(False)
         chunk = all_rows[offset:(offset+step)]
         p = multiprocessing.Process(target=generate_matches, args=(match_config, chunk, graph, i, send_end))
