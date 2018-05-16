@@ -34,13 +34,13 @@ def numbering_rule(a, b):
     nums_a = extract_all_numbers(a)
     nums_b = extract_all_numbers(b)
     if nums_a != []:
-        x = nums_a[len(nums_a)-1]["value"]
-        x_str =  nums_a[len(nums_a)-1]["str"]
-        x_pos = nums_a[len(nums_a)-1]["position"][0]
+        x = nums_a[0]["value"]
+        x_str =  nums_a[0]["str"]
+        x_pos = nums_a[0]["position"][0]
     if nums_b != []:
-        y = nums_b[len(nums_b)-1]["value"]
-        y_str = nums_b[len(nums_b)-1]["str"]
-        y_pos = nums_b[len(nums_b)-1]["position"][0]
+        y = nums_b[0]["value"]
+        y_str = nums_b[0]["str"]
+        y_pos = nums_b[0]["position"][0]
 
     if x_pos == "middle" and y == "nan":          
         check = a.replace(x_str, "")
@@ -62,8 +62,8 @@ def first_letter_rule(a,b):
     """
     checks if first letters of strings :a: and :b: when the strings contain max. 1 word
     """
-    if a and b:
-        if len(a.split(" ")) < 2 and len(b.split(" ")) < 2:
-            if a[0].lower() != b[0].lower():
-                return FIRST_LETTER_WEIGHT
+
+    if len(a.split(" ")) < 2 and len(b.split(" ")) < 2:
+        if a[0].lower() != b[0].lower():
+            return FIRST_LETTER_WEIGHT
     return 0

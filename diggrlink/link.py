@@ -145,10 +145,6 @@ def link_titles(titles_a,titles_b, rules=ALL_RULES):
         #rules = [first_letter_rule, numbering_rule]
 
         if a and b:
-            # weight = 0
-            # for rule in rules:
-            #     weight += rule(a,b)
-
             weights = [ rule(a,b) for rule in rules ]
 
             r = lev.ratio(std(a),std(b)) - sum(weights)

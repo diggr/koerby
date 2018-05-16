@@ -1,9 +1,9 @@
-from kirby.rdf import filter_matches
+from kirby.rdf import perfect_match_filter
 from diggrlink.link import link_titles
 
 def main():
 
-    filter_matches()
+    perfect_match_filter()
 
 if __name__ == "__main__":
     main()
