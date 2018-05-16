@@ -1,4 +1,4 @@
-from kirby.rdf import start_generate_matches
+from kirby.matching import match_datasets
 from diggrlink.link import link_titles
 
 def main():
@@ -14,7 +14,7 @@ def main():
         }
     }]
 
-    start_generate_matches(match_config)
+    match_datasets(match_config)
 
 if __name__ == "__main__":
     main()

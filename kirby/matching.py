@@ -1,14 +1,15 @@
 import math
 import timeit
 import multiprocessing
-from rdflib import Graph, RDF
+from rdflib import Graph, RDF, Literal
 from datetime import datetime
 from pit.prov import Provenance
 
-from .rdf import load_rdf_dataset, get_uris_by_type, get_values, match_literal
-from .rdf import SOURCE_DATASET_ROW, CONTEXT, MATCHES_FILEPATH
-from .rdf import KIRBY_PROP, KIRBY_MATCH
-from .config import PROV_AGENT
+#from .rdf import load_rdf_dataset, get_uris_by_type, get_values, match_literal
+#from .rdf import SOURCE_DATASET_ROW, CONTEXT, MATCHES_FILEPATH, DATASET_FILEPATH
+#from .rdf import KIRBY_PROP, KIRBY_MATCH
+from .config import PROV_AGENT, NS, DATASET_FILEPATH, MATCHES_FILEPATH
+from .rdf_dataset import RdfDataset
 
 # match config
 PROCESS_COUNT = 8
@@ -21,24 +22,26 @@ def match_datasets(match_config, processes=PROCESS_COUNT):
     match_graph = Graph()
 
     print(datetime.now().isoformat())
+    
     print("load dataset ...")
-    graph = load_rdf_dataset()
-    all_rows = get_uris_by_type(graph, SOURCE_DATASET_ROW)
+
+    graph = RdfDataset(DATASET_FILEPATH)
+
+    all_entries = graph.uris(rdf_type=NS("DatasetRow"))
 
     print("start matching process ...")
 
     #multiprocessing setup
     offset = 0
-    step = math.ceil(len(all_rows)/PROCESS_COUNT)
-    #step = 500
-
+    #step = math.ceil(len(all_entries) / PROCESS_COUNT)
+    step = 50
     jobs = []
     pipe_list = []
 
     #start multiprocesses
     for i in range(PROCESS_COUNT):
         recv_end, send_end = multiprocessing.Pipe(False)
-        chunk = all_rows[offset:(offset+step)]
+        chunk = all_entries[offset:(offset + step)]
         p = multiprocessing.Process(target=_generate_matches, args=(match_config, chunk, graph, i, send_end))
         jobs.append(p)
         pipe_list.append(recv_end)
@@ -55,7 +58,7 @@ def match_datasets(match_config, processes=PROCESS_COUNT):
     
     #write results
     with open(MATCHES_FILEPATH, "wb") as f:
-        f.write(match_graph.serialize(format="json-ld", context=CONTEXT))
+        f.write(match_graph.serialize(format="json-ld", context=NS.context))
 
     #add provenance file
     prov = Provenance(MATCHES_FILEPATH)
@@ -64,28 +67,29 @@ def match_datasets(match_config, processes=PROCESS_COUNT):
     prov.save()
 
     print(datetime.now().isoformat())
-    #print( len([x for x in match_graph.triples( (None, None, None) ) ]) )
 
-
-def _add_match_to_graph(graph, row, match, value):
+def _add_match_to_graph(graph, entry, match, value):
     """
     Write match results as rdf triples into :graph:
     """
-    match_uri = build_match_uri(row, match)
-    graph.add( (match_uri, RDF.type, KIRBY_MATCH) ) 
-    graph.add( (match_uri, KIRBY_PROP.matched, row) )
-    graph.add( (match_uri, KIRBY_PROP.matched, match) )
-    graph.add( (row, KIRBY_PROP.belongs_to_match, match_uri) )
-    graph.add( (match, KIRBY_PROP.belongs_to_match, match_uri) )
-    graph.add( (match_uri, KIRBY_PROP.has_match_value, Literal(value)) )
+    match_uri = NS.match(entry, match)
+    graph.add( (match_uri, RDF.type, NS("Match")) ) 
+    graph.add( (match_uri, NS.prop("matched"), entry) )
+    graph.add( (match_uri, NS.prop("matched"), match) )
+    graph.add( (entry, NS.prop("belongs_to_match"), match_uri) )
+    graph.add( (entry, NS.prop("belongs_to_match"), match_uri) )
+    graph.add( (match_uri, NS.prop("has_match_value"), Literal(value)) )
+
+def _iter_deterministic_rules(ruleset):
+    if "deterministic" in ruleset:
+        for det_rule in ruleset["deterministic"]:
+            yield det_rule
 
 def _generate_matches(match_config, dataset, graph, thread_no, send_end):
     """
     Builds a graph conataining matches based on the rules defined in :matching_config: .
     """
-    skip = []
 
-    #print("finding matches ...")
     match_graph = Graph()
 
     for i, row in enumerate(dataset):
@@ -94,28 +98,24 @@ def _generate_matches(match_config, dataset, graph, thread_no, send_end):
 
         #apply match rules
         for ruleset in match_config:
-
             match_candidates = []
 
-
             #apply deterministic rules to find match candidates
-            for deter_rule in iter_deterministic_rules(ruleset):
+            for deter_rule in _iter_deterministic_rules(ruleset):
 
                 for prop in deter_rule["fields"]:
-                    prop_values = get_values(graph, row, build_property_uri(prop))
-                    match_candidates += match_literal(graph, prop, prop_values, deter_rule["std_func"])
+                    prop_values = graph.values(row, NS.prop(prop))
+                    match_candidates += graph.match_literal(prop, prop_values, deter_rule["std_func"])
             
             #apply probabilistic rules ot find match probability value
             matches = []
-            #match_candidates = [ x for x in match_candidates if x not in skip ]
-
+            
             if "probabilistic" in ruleset:
                 cmp_func = ruleset["probabilistic"]["cmp_func"]
 
                 values = []
-                for prop in ruleset["probabilistic"]["fields"]:
-                    prop_values = get_values(graph, row, build_property_uri(prop))
-                    values += prop_values
+                prop_values = graph.values(row, NS.prop(prop))
+                values += prop_values
 
             for candidate in set(match_candidates):
                 if candidate != row:
@@ -126,22 +126,18 @@ def _generate_matches(match_config, dataset, graph, thread_no, send_end):
                     else:
                         candidate_values = []
                         for prop in ruleset["probabilistic"]["fields"]:
-                            candidate_values += get_values(graph, candidate, build_property_uri(prop))
+                            candidate_values += graph.values(candidate, NS.prop(prop))
 
                         cmp_value = cmp_func(values, candidate_values)
 
                         if cmp_value > 0.7:
                             _add_match_to_graph(match_graph, row, candidate, cmp_value)
-                            
-            skip.append(row)
 
+        # timing stuff
         stop_time = timeit.default_timer()
-
-        #print("process {} >> iteration {} / {}: \t {} \t\t {} ".format(thread_no, i, len(dataset), stop_time-start_time), ", ".join(values))
         if stop_time - start_time > 10:
             print("process {} >> iteration {} / {}: \t {} \t\t {} ".format(thread_no, i, len(dataset), stop_time-start_time, ", ".join(values)))
         else:
             print("process {} >> iteration {} / {}: \t {}".format(thread_no, i, len(dataset), stop_time-start_time))
-        #print(stop_time-start_time)
 
     send_end.send(match_graph)

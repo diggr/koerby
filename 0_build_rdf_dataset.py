@@ -1,4 +1,4 @@
-from kirby.rdf import generate_rdf_dataset, load_rdf_dataset, match_literal, generate_matches
+from kirby.rdf import generate_rdf_dataset
 from kirby.config import init
 
 def main():
