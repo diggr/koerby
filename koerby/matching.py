@@ -8,7 +8,7 @@ from pit.prov import Provenance
 #from .rdf import load_rdf_dataset, get_uris_by_type, get_values, match_literal
 #from .rdf import SOURCE_DATASET_ROW, CONTEXT, MATCHES_FILEPATH, DATASET_FILEPATH
 #from .rdf import KIRBY_PROP, KIRBY_MATCH
-from .config import PROV_AGENT, NS, DATASET_FILEPATH, MATCHES_FILEPATH
+from .config import PROV_AGENT, NS, DATASET_FILEPATH, MATCHES_FILEPATH, CONFIG
 from .rdf_dataset import RdfDataset
 
 # match config
@@ -25,7 +25,7 @@ def match_datasets(match_config, processes=PROCESS_COUNT):
     
     print("load dataset ...")
 
-    graph = RdfDataset(DATASET_FILEPATH)
+    graph = RdfDataset(DATASET_FILEPATH, namespace=CONFIG["namespaces"])
 
     all_entries = graph.uris(rdf_type=NS("DatasetRow"))
 
@@ -34,7 +34,7 @@ def match_datasets(match_config, processes=PROCESS_COUNT):
     #multiprocessing setup
     offset = 0
     #step = math.ceil(len(all_entries) / PROCESS_COUNT)
-    step = 50
+    step = 100
     jobs = []
     pipe_list = []
 
@@ -77,7 +77,7 @@ def _add_match_to_graph(graph, entry, match, value):
     graph.add( (match_uri, NS.prop("matched"), entry) )
     graph.add( (match_uri, NS.prop("matched"), match) )
     graph.add( (entry, NS.prop("belongs_to_match"), match_uri) )
-    graph.add( (entry, NS.prop("belongs_to_match"), match_uri) )
+    graph.add( (match, NS.prop("belongs_to_match"), match_uri) )
     graph.add( (match_uri, NS.prop("has_match_value"), Literal(value)) )
 
 def _iter_deterministic_rules(ruleset):

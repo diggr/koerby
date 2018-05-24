@@ -2,7 +2,7 @@ import os
 import json
 import pandas as pd
 from tqdm import tqdm
-from .config import SOURCE_DIR
+#from .config import SOURCE_DIR
 
 def read_csv(filepath, sep=","):
     """

@@ -1,19 +1,22 @@
 import json
 from tqdm import tqdm
 from rdflib import Graph, RDF, URIRef, Literal
-
-from .config import NS
+from .namespaces import KirbyNamespace
+#from .config import NS
 from .csv import read_csv
+
+#NS = KirbyNamespace()
 
 class RdfDataset():
     """
     Wrapper class for rdflib graph; for convenience's sake
     """
 
-    def __init__(self, filepath=None):
+    def __init__(self, filepath=None, namespace=None):
         self.g = Graph()
         if filepath:
             # load graph from file
+            self.ns = KirbyNamespace(namespace)
             self.load(filepath)
 
 
@@ -53,7 +56,7 @@ class RdfDataset():
         Returns all URIs which have property :prop: of (one of) literal :values: .
         If std is set, literal and value will be standardized using function :std: .
         """
-        prop_uri = NS.prop(prop)    
+        prop_uri = self.ns.prop(prop)    
         results = self.g.triples ( (None, prop_uri, None ) )
         candidates = [ (x[0], str(x[2])) for x in results ]
         if not std:
@@ -68,6 +71,7 @@ class RdfDataset():
         for result in results:
             yield (result[0], result[2])
 
+
     #
     # transform graph
     #
@@ -75,7 +79,7 @@ class RdfDataset():
     def transform_property(self, prop, transform_func):
 
         print("transform property <{}> ...".format(prop))
-        prop_uri = NS.prop(prop)
+        prop_uri = self.ns.prop(prop)
     
         for sbj, obj in tqdm(iter_property_values(prop_uri)):
             new_value = transform_func(str(obj))
@@ -86,7 +90,6 @@ class RdfDataset():
             f.write(graph.serialize(format="json-ld", context=CONTEXT))    
 
 
-
     #
     # i/o functions
     # 
@@ -94,7 +97,7 @@ class RdfDataset():
     def load(self, filepath):
         with open(filepath, encoding="utf-8") as f:
             graph_data = json.load(f)
-        self.g = Graph().parse(data=json.dumps(graph_data["@graph"]), format="json-ld", context=NS.context)
+        self.g = Graph().parse(data=json.dumps(graph_data["@graph"]), format="json-ld", context=self.ns.context)
 
 
     def read_csv(self, filepath, name):
@@ -105,18 +108,18 @@ class RdfDataset():
         dataset = read_csv(filepath)
 
         # add dataset
-        dataset_uri = NS.dataset(name)
-        self.g.add( (dataset_uri, RDF.type, NS("Dataset")) )
+        dataset_uri = self.ns.dataset(name)
+        self.g.add( (dataset_uri, RDF.type, self.ns("Dataset")) )
 
         # add dataset entries
         for row_nr, row in tqdm(enumerate(dataset)):
-            row_uri = NS.entry(name, row_nr)
-            self.g.add( (row_uri, RDF.type, NS("DatasetRow")) )
-            self.g.add( (dataset_uri, NS.prop("contains"), row_uri) )
-            self.g.add( (row_uri, NS.prop("is_part_of"), dataset_uri) )
+            row_uri = self.ns.entry(name, row_nr)
+            self.g.add( (row_uri, RDF.type, self.ns("DatasetRow")) )
+            self.g.add( (dataset_uri, self.ns.prop("contains"), row_uri) )
+            self.g.add( (row_uri, self.ns.prop("is_part_of"), dataset_uri) )
             for column, value in row.items():
                 if not "Unnamed" in column:
-                    property_uri = NS.prop(column)
+                    property_uri = self.ns.prop(column)
                     if value:
                         self.g.add( (row_uri, property_uri, Literal(value)) )
     
@@ -130,17 +133,17 @@ class RdfDataset():
         dataset = json.load(open(filepath))
 
         # add dataset
-        dataset_uri = NS.dataset(name)
+        dataset_uri = self.ns.dataset(name)
         self.g.add( (dataset_uri, RDF.type, NS("Dataset")) )
 
         # add dataset entries
         for row_nr, row in tqdm(dataset.items()):
-            row_uri = NS.entry(name, row_nr)
+            row_uri = self.ns.entry(name, row_nr)
             self.g.add( (row_uri, RDF.type, NS("DatasetRow")) )
-            self.g.add( (dataset_uri, NS.prop("contains"), row_uri) )
-            self.g.add( (row_uri, NS.prop("is_part_of"), dataset_uri) )
+            self.g.add( (dataset_uri, self.ns.prop("contains"), row_uri) )
+            self.g.add( (row_uri, self.ns.prop("is_part_of"), dataset_uri) )
             for key, value in row.items():
-                property_uri = NS.prop(key)
+                property_uri = self.ns.prop(key)
                 if type(value) == list:
                     for v in value:
                         if v:
@@ -155,4 +158,4 @@ class RdfDataset():
         """
         print("serializes graph as jsonld to <{}> ...".format(filepath))
         with open(filepath, "wb") as f:
-            f.write(self.g.serialize(format="json-ld", context=NS.context))        
+            f.write(self.g.serialize(format="json-ld", context=self.ns.context))        
