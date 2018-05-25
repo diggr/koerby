@@ -13,7 +13,7 @@ from rdflib.namespace import RDF, FOAF, RDFS
 from datetime import datetime
 import random
 
-from .config import CONFIG, DATA_DIR, PROJECT_NAME, DATASET_FILEPATH, MATCHES_FILEPATH, KIRBY_FILEPATH, EXPORT_DIR, PROV_AGENT
+from .config import CONFIG, DATA_DIR, PROJECT_NAME, DATASET_FILEPATH, MATCHES_FILEPATH, KIRBY_FILEPATH, EXPORT_DIR, PROV_AGENT, NS
 from .csv import read_csv, write_csv
 from .utils import source_files
 from pit.prov import Provenance
@@ -45,21 +45,46 @@ CONTEXT = {
 
 
 
-def build_kirby_entry_uri():
-    uri = URIRef("{}/{}_{}".format(KIRBY_ENTRY, PROJECT_NAME, uuid.uuid4().hex))
-    return uri
+# def build_kirby_entry_uri():
+#     uri = URIRef("{}/{}_{}".format(KIRBY_ENTRY, PROJECT_NAME, uuid.uuid4().hex))
+#     return uri
 
-def build_dataset_uri(dataset_name):
-    uri = URIRef("{}/{}".format(KIRBY_DATASET, dataset_name))
-    return uri
+# def build_dataset_uri(dataset_name):
+#     uri = URIRef("{}/{}".format(KIRBY_DATASET, dataset_name))
+#     return uri
 
-def build_dataset_row_uri(dataset_name, row):
-    uri = URIRef("{}/{}/{}".format(KIRBY_DATASET, dataset_name, row))
-    return uri
+# def build_dataset_row_uri(dataset_name, row):
+#     uri = URIRef("{}/{}/{}".format(KIRBY_DATASET, dataset_name, row))
+#     return uri
 
-def build_property_uri(property_name):
-    uri = URIRef("{}p_{}".format(KIRBY_PROP, property_name))
-    return uri
+# def build_property_uri(property_name):
+#     uri = URIRef("{}p_{}".format(KIRBY_PROP, property_name))
+#     return uri
+
+
+def generate_rdf_dataset():
+    dataset = RdfDataset(namespace=CONFIG["namespaces"])
+    sources = []
+    filenames = []
+    for filepath, filename, filetype in source_files():
+        print("generate rdf dataset from <{}> ...".format(filename))
+        if filename.endswith(".csv"):
+            dataset.read_csv(filepath)
+        elif filename.endswith(".json"):
+            dataset.read_json(filepath)
+        sources.append(filepath)
+        filenames.append(filename)
+    export_filepath = os.path.join(DATA_DIR, "{}.json".format(PROJECT_NAME))
+    dataset.to_jsonld(export_filepath)
+
+    prov = Provenance(export_filepath)
+    prov.add(
+        agent=PROV_AGENT,
+        activity="rdf_dataset_generation",
+        description="Build RDF dataset from source datasets <{}>".format(", ".join(filenames))
+    )
+    prov.add_sources(sources)
+    prov.save()
 
 
 

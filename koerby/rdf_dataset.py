@@ -14,9 +14,9 @@ class RdfDataset():
 
     def __init__(self, filepath=None, namespace=None):
         self.g = Graph()
+        self.ns = KirbyNamespace(namespace)
         if filepath:
             # load graph from file
-            self.ns = KirbyNamespace(namespace)
             self.load(filepath)
 
 
@@ -100,12 +100,15 @@ class RdfDataset():
         self.g = Graph().parse(data=json.dumps(graph_data["@graph"]), format="json-ld", context=self.ns.context)
 
 
-    def read_csv(self, filepath, name):
+    def read_csv(self, filepath, name=None):
         """
         Reads csv file into rdf graph
         """
         print("loading csv into graph <{}> ...".format(name))        
         dataset = read_csv(filepath)
+
+        if not name:
+            name = filepath.split("/")[-1].split(".")[0]
 
         # add dataset
         dataset_uri = self.ns.dataset(name)
@@ -124,22 +127,24 @@ class RdfDataset():
                         self.g.add( (row_uri, property_uri, Literal(value)) )
     
 
-    def read_json(self, filepath, name):
+    def read_json(self, filepath, name=None):
         """
         Converts (flat) json file into an rdf graph (using standard koerby namespace)
         """
         print("loading json into graph <{}> ...".format(name))
 
         dataset = json.load(open(filepath))
+        if not name:
+            name = filepath.split("/")[-1].split(".")[0]
 
         # add dataset
         dataset_uri = self.ns.dataset(name)
-        self.g.add( (dataset_uri, RDF.type, NS("Dataset")) )
+        self.g.add( (dataset_uri, RDF.type, self.ns("Dataset")) )
 
         # add dataset entries
         for row_nr, row in tqdm(dataset.items()):
             row_uri = self.ns.entry(name, row_nr)
-            self.g.add( (row_uri, RDF.type, NS("DatasetRow")) )
+            self.g.add( (row_uri, RDF.type, self.ns("DatasetRow")) )
             self.g.add( (dataset_uri, self.ns.prop("contains"), row_uri) )
             self.g.add( (row_uri, self.ns.prop("is_part_of"), dataset_uri) )
             for key, value in row.items():

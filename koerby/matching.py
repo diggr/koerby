@@ -105,6 +105,11 @@ def _generate_matches(match_config, dataset, graph, thread_no, send_end):
 
                 for prop in deter_rule["fields"]:
                     prop_values = graph.values(row, NS.prop(prop))
+
+                    #ignore specific values if defined in :match_config:
+                    if "ignore_values" in deter_rule:
+                        prop_values = list(set(prop_values)-set(deter_rule["ignore_values"]))
+
                     match_candidates += graph.match_literal(prop, prop_values, deter_rule["std_func"])
             
             #apply probabilistic rules ot find match probability value
@@ -114,8 +119,9 @@ def _generate_matches(match_config, dataset, graph, thread_no, send_end):
                 cmp_func = ruleset["probabilistic"]["cmp_func"]
 
                 values = []
-                prop_values = graph.values(row, NS.prop(prop))
-                values += prop_values
+                for prop in ruleset["probabilistic"]["fields"]:
+                    prop_values = graph.values(row, NS.prop(prop))
+                    values += prop_values
 
             for candidate in set(match_candidates):
                 if candidate != row:
