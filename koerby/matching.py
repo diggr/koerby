@@ -34,7 +34,7 @@ def match_datasets(match_config, processes=PROCESS_COUNT):
     #multiprocessing setup
     offset = 0
     #step = math.ceil(len(all_entries) / PROCESS_COUNT)
-    step = 100
+    step = 1000
     jobs = []
     pipe_list = []
 
@@ -106,7 +106,7 @@ def _generate_matches(match_config, dataset, graph, thread_no, send_end):
                 for prop in deter_rule["fields"]:
                     prop_values = graph.values(row, NS.prop(prop))
 
-                    #ignore specific values if defined in :match_config:
+                    #ignore specific values if defined in :match_config:co
                     if "ignore_values" in deter_rule:
                         prop_values = list(set(prop_values)-set(deter_rule["ignore_values"]))
 

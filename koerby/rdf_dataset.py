@@ -131,11 +131,13 @@ class RdfDataset():
         """
         Converts (flat) json file into an rdf graph (using standard koerby namespace)
         """
+
+        if not name:
+            name = filepath.split("/")[-1].split(".")[0]
         print("loading json into graph <{}> ...".format(name))
 
         dataset = json.load(open(filepath))
-        if not name:
-            name = filepath.split("/")[-1].split(".")[0]
+
 
         # add dataset
         dataset_uri = self.ns.dataset(name)

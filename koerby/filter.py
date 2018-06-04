@@ -1,7 +1,7 @@
 from pit.prov import Provenance
 from tqdm import tqdm 
 
-from .config import PROV_AGENT, NS, DATASET_FILEPATH, MATCHES_FILEPATH
+from .config import PROV_AGENT, NS, DATASET_FILEPATH, MATCHES_FILEPATH, CONFIG
 from .rdf_dataset import RdfDataset
 
 
@@ -32,9 +32,9 @@ def perfect_match_filter():
 
     print("load source graph ...")
     #graph = load_rdf_dataset()
-    graph = RdfDataset(DATASET_FILEPATH)
+    graph = RdfDataset(DATASET_FILEPATH, namespace=CONFIG["namespaces"])
     print("load matches graph ...")
-    matches_graph = RdfDataset(MATCHES_FILEPATH)
+    matches_graph = RdfDataset(MATCHES_FILEPATH, namespace=CONFIG["namespaces"])
     #matches_graph = load_rdf_dataset(filepath=MATCHES_FILEPATH)
 
     print("applying perfect match filter ...")
