@@ -33,8 +33,8 @@ def match_datasets(match_config, processes=PROCESS_COUNT):
 
     #multiprocessing setup
     offset = 0
-    #step = math.ceil(len(all_entries) / PROCESS_COUNT)
-    step = 1000
+    step = math.ceil(len(all_entries) / PROCESS_COUNT)
+    #step = 1000
     jobs = []
     pipe_list = []
 
