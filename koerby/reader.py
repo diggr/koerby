@@ -1,7 +1,7 @@
 import os
 import json
 import yaml
-from rdflib import Graph
+from rdflib import Graph, RDF
 from .namespaces import KirbyNamespace
 
 def load_jsonld(filepath, context):
@@ -34,6 +34,7 @@ class KirbyReader(object):
         for result in self._g.triples( (source_uri, self._ns.prop("belongs_to_match"), None) ):
             match_uri = result[2]
             match_value = self._g.value(match_uri, self._ns.prop("has_match_value"))
+            print(source_uri, match_uri, match_value)
             yield (match_uri, float(match_value))
 
     def _all_match_entries(self, match):

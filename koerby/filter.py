@@ -51,7 +51,7 @@ def perfect_match_filter():
             #get other match row dataset name
             other_dataset = _get_other_dataset(graph, matches_graph, match, row)
             
-            #remove all matche under 1 if other row is from the same dataset
+            #remove all matches under 1 if other row is from the same dataset
             for match_candidate in all_matches:
                 if match != match_candidate and match_candidate not in deleted_matches:
 
@@ -66,10 +66,9 @@ def perfect_match_filter():
                         if candidate_best_match_value < 1:
                             delete_count += 1
                             matches_graph.g.remove( (match_candidate, None, None) )
+                            matches_graph.g.remove( (None, NS.prop("belongs_to_match"), match_candidate) )
                             deleted_matches.append(match_candidate)
     
-
-
 
     #save filtered graph + provenance 
     print("Removed matches: {}".format(delete_count))
