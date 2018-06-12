@@ -73,6 +73,8 @@ parameter and return a matching ratio ratio between 0.0 and 1.0.
 
 ```
 from koerby.matching import match_datasets
+
+#some linking algorithm
 from diggrlink.link import link_titles
 
 if __name__ == "__main__":

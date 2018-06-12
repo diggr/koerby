@@ -40,7 +40,8 @@ def perfect_match_filter():
     print("applying perfect match filter ...")
     deleted_matches = []
     delete_count = 0
-    for i, row in enumerate(graph.iter_by_type(NS("DatasetRow"))):
+    for i, res in enumerate(graph.iter_by_type(NS("DatasetRow"))):
+        row = res[0]
         print(i, row)
         #get all matches containing :row:
         all_matches = [ x[2] for x in matches_graph.g.triples( (row, NS.prop("belongs_to_match"), None) ) ]
@@ -67,6 +68,9 @@ def perfect_match_filter():
                             matches_graph.g.remove( (match_candidate, None, None) )
                             deleted_matches.append(match_candidate)
     
+
+
+
     #save filtered graph + provenance 
     print("Removed matches: {}".format(delete_count))
     print("serialize matches graph ...")
