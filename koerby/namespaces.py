@@ -1,4 +1,5 @@
 import hashlib
+import uuid
 from rdflib import Namespace, RDF
 
 class KirbyNamespace(object):
@@ -11,6 +12,7 @@ class KirbyNamespace(object):
         self._dataset = Namespace(namespaces["dataset"])
         self._property = Namespace(namespaces["property"])
         self._match = Namespace(namespaces["match"])
+        self._cluster = Namespace(namespaces["cluster"])
     
         self.context = {
             "rdf": str(RDF),
@@ -23,6 +25,9 @@ class KirbyNamespace(object):
     #     id_ = "{}_{}".format(PROJECT_NAME, uuid.uuid4().hex)
     #     return self._entry[id_]
     
+    def cluster(self):
+        return self._cluster["c_{}".format(uuid.uuid4().hex)]
+
     def dataset(self, name):
         return self._dataset[name]
 

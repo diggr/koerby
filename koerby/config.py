@@ -36,7 +36,7 @@ PROJECT_NAME = CONFIG["project"]["name"]
 
 DATASET_FILEPATH = os.path.join(DATA_DIR, "{}.json".format(PROJECT_NAME))
 MATCHES_FILEPATH = os.path.join(DATA_DIR, "{}_matches.json".format(PROJECT_NAME))
-KIRBY_FILEPATH = os.path.join(DATA_DIR, "{}_kirby.json".format(PROJECT_NAME))
+CLUSTER_FILEPATH = os.path.join(DATA_DIR, "{}_cluster.json".format(PROJECT_NAME))
 
 
 

@@ -165,4 +165,12 @@ class RdfDataset():
         """
         print("serializes graph as jsonld to <{}> ...".format(filepath))
         with open(filepath, "wb") as f:
-            f.write(self.g.serialize(format="json-ld", context=self.ns.context))        
+            f.write(self.g.serialize(format="json-ld", context=self.ns.context))    
+
+    def to_ttl(self, filepath):
+        """
+        Serializes graph as jsonld file in :filepath:
+        """
+        print("serializes graph as ttl file <{}> ...".format(filepath))
+        with open(filepath.replace(".json", ".ttl"), "wb") as f:
+            f.write(self.g.serialize(format="ttl"))     
