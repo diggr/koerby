@@ -14,10 +14,16 @@ class RdfDataset():
 
     def __init__(self, filepath=None, namespace=None):
         self.g = Graph()
-        self.ns = KirbyNamespace(namespace)
+        if namespace:
+            self.ns = KirbyNamespace(namespace)
+        else:
+            self.ns = None
         if filepath:
             # load graph from file
-            self.load(filepath)
+            if filepath.endswith(".ttl"):
+                self.load_ttl(filepath)
+            else:
+                self.load(filepath)
 
 
     #
@@ -98,6 +104,10 @@ class RdfDataset():
         with open(filepath, encoding="utf-8") as f:
             graph_data = json.load(f)
         self.g = Graph().parse(data=json.dumps(graph_data["@graph"]), format="json-ld", context=self.ns.context)
+
+    def load_ttl(self, filepath):
+
+        self.g = Graph().parse(filepath, format="ttl")        
 
 
     def read_csv(self, filepath, name=None):

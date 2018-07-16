@@ -13,7 +13,7 @@ from rdflib.namespace import RDF, FOAF, RDFS
 from datetime import datetime
 import random
 
-from .config import CONFIG, DATA_DIR, PROJECT_NAME, DATASET_FILEPATH, MATCHES_FILEPATH, KIRBY_FILEPATH, EXPORT_DIR, PROV_AGENT, NS
+from .config import CONFIG, DATA_DIR, PROJECT_NAME, DATASET_FILEPATH, MATCHES_FILEPATH, EXPORT_DIR, PROV_AGENT, NS
 from .csv import read_csv, write_csv
 from .utils import source_files
 from pit.prov import Provenance

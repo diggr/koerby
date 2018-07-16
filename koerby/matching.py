@@ -34,7 +34,7 @@ def match_datasets(match_config, processes=PROCESS_COUNT):
     #multiprocessing setup
     offset = 0
     step = math.ceil(len(all_entries) / PROCESS_COUNT)
-    #step = 1000
+    #step = 100
     jobs = []
     pipe_list = []
 
@@ -100,7 +100,9 @@ def _generate_matches(match_config, dataset, graph, thread_no, send_end):
         for ruleset in match_config:
             match_candidates = []
 
+
             #apply deterministic rules to find match candidates
+
             for deter_rule in _iter_deterministic_rules(ruleset):
 
                 for prop in deter_rule["fields"]:
