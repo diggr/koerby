@@ -1,3 +1,9 @@
+"""
+Koerby reader classes
+
+
+"""
+
 import os
 import json
 import yaml
@@ -16,6 +22,12 @@ def load_config_file(directory):
     return config
 
 class KirbyReader(object):
+    """
+    class for accessing kirby matches
+
+    :kirby_dir: koerby  project directory (the one with the config.yml file)
+
+    """
     def __init__(self, kirby_dir):
         config = load_config_file(kirby_dir)
         namespaces = config["namespaces"]
@@ -46,11 +58,16 @@ class KirbyReader(object):
         return str(ds_name)
 
     def get_matches(self, source_ds, source_id, target_ds, threshold):
+        """
+        returns all matches of :source_id: in dataset :target_ds: with a match 
+        value greater or equal :threshold:
+
+        returns a list of matches ordered by match_value
+        """
         source_uri = self._ns.entry(source_ds, source_id)
         matches = []
         for match, match_value in self._all_matches(source_uri):
             for entry in self._all_match_entries(match):
-                #print("\t{}".format(entry))
                 if target_ds in entry and match_value >= threshold:
                     matches.append( (entry, match_value) )
         return sorted(matches, key=lambda x: -x[1])

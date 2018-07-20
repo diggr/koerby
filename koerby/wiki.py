@@ -1,3 +1,9 @@
+"""
+Wiki disambiguation
+
+Not needed now
+"""
+
 import requests
 import json
 import string
