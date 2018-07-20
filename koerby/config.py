@@ -1,3 +1,12 @@
+"""
+Read in project config file
+Provides config information
+Provides basic prov information
+
+really messy at the moment
+
+"""
+
 import yaml
 import os
 import hashlib
@@ -41,3 +50,5 @@ CLUSTER_FILEPATH = os.path.join(DATA_DIR, "{}_cluster.json".format(PROJECT_NAME)
 
 
 NS = KirbyNamespace(CONFIG["namespaces"])
+
+NS_CLUSTER = NS("Cluster")

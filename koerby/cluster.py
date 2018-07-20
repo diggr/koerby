@@ -1,3 +1,10 @@
+"""
+Build clusters form matches by grouping all matches connected by their entries
+
+If a custer gets too big, a community detection algorithm can be applied in order
+to split it up into smaller clusters
+"""
+
 import networkx as nx
 import community
 from pit.prov import Provenance
@@ -9,13 +16,9 @@ from itertools import permutations
 from .config import PROV_AGENT, NS, DATASET_FILEPATH, MATCHES_FILEPATH, CONFIG, RDF, CLUSTER_FILEPATH
 from .rdf_dataset import RdfDataset
 
-RELATED_MATCH_QUERY = """
-SELECT ?m2
-WHERE {{
- 	<http://kirby.diggr.link/match/m_039f60280ba91cdb5b6f6b5a56db7a8c> <http://kirby.diggr.link/property/p_matched> ?m .
-    ?m <http://kirby.diggr.link/property/p_belongs_to_match> ?m2 .
-}} 
-"""
+#community detection configuration
+RESOLUTION = 0.4
+MATCH_THRESHOLD = 1000
 
 class ClusterBuilder(object):
 
@@ -43,36 +46,30 @@ class ClusterBuilder(object):
         """
         related_matches = set()
         entry_uris = [ x[2] for x in self.match_graph.g.triples( (URIRef(uri), NS.prop("matched"), None) ) ]
+        
+        #new_match_uris = set()
 
         for entry_uri in entry_uris:
-            new_match_uris = set()
-            # for match in self.match_graph.g.triples( (None, NS.prop("matched"), entry_uri) ):
-            #     ratio = self.match_graph.g.value(match[0], NS.prop("has_match_value"))
-            #     if ratio >= self.threshold:
-            #         new_match_uris.add(str(match[0]))
 
             new_match_uris = { str(x[0]) for x in self.match_graph.g.triples( (None, NS.prop("matched"), entry_uri) ) }
             related_matches = related_matches.union(new_match_uris)
         
         return related_matches
 
-    def find_cluster_matches(self, uri, found):
+    def find_cluster_matches(self, uris, found, n=0):
         """
         Recursevly iterate through graph to find all related match uris to :uri:
         """
 
-        self.done.add(uri)
-
-        related = self.get_related_matches(uri)
+        related = set()
+        for uri in uris:
+            related = related.union(self.get_related_matches(uri))
 
         new = related - found
-        #print(len(found), len(related), len(new))
-
         found = found.union(related)
 
-        for match in new:
-            if match not in self.done:
-                found = found.union(self.find_cluster_matches(match, found))
+        if len(new) > 0:
+            found = self.find_cluster_matches(new, found)
         
         return found
 
@@ -88,15 +85,13 @@ class ClusterBuilder(object):
                 print("   ")
                 print(match)
                 print("in skip!!!!")
-                raise "Error"
+                raise Error
             #self.match_dict[match] = cluster_uri
 
             self.cluster_graph.g.add( (cluster_uri, NS.prop("contains_match"), URIRef(match) ) )
             self.cluster_graph.g.add( (URIRef(match), NS.prop("belongs_to_cluster"), cluster_uri ) )
 
              
-
-
     def get_match_uris(self, community):
         match_uris = set()
         for entry1, entry2 in permutations(community,2):
@@ -118,7 +113,7 @@ class ClusterBuilder(object):
             g.add_edge(nodes[0], nodes[1])
 
         # apply mudularity algorithm
-        partition = community.best_partition(g, resolution=1)
+        partition = community.best_partition(g, resolution=RESOLUTION)
         communities = defaultdict(list)
         for node in g.nodes:
             communities[partition[node]].append(node)
@@ -131,15 +126,15 @@ class ClusterBuilder(object):
     def create_cluster(self, uri):
    
         #print("find matches")
-        self.done = set()
-        found_matches = self.find_cluster_matches(uri, set())
-        print("add")
-        if len(found_matches) < 500:
+        found_matches = self.find_cluster_matches([uri], set())
+
+        print("add cluster")
+        if len(found_matches) < MATCH_THRESHOLD:
             self.add_cluster_to_graph(found_matches)
         else:
-            print("detect communities {}".format(len(found_matches)))
+            print("detect communities - cluster size: {}".format(len(found_matches)))
             for cluster_community in self.detect_communities(found_matches):
-                print(len(cluster_community))
+                print("\t", len(cluster_community))
                 self.add_cluster_to_graph(cluster_community)
 
         self.skip += [ str(x) for x in found_matches ]   

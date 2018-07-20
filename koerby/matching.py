@@ -1,3 +1,41 @@
+"""
+Match dataset enries and build a graph containing the matching results
+
+Match result graph:
+
+(Match) ------ <matched> ---------- (Entry 1)
+          |--- <matched> ---------- (Entry 2)
+          |--- <has_match_ratio> -- Literal(match value)
+
+(Entry1) ----- <belongs_to_match> ---- (Match)
+(Entry2) ----- <belongs_to_match> ---- (Match)
+
+------
+
+:match_config: defines wich properties are used for matching and which functions should be used.
+
+e.g.
+
+    match_config = [{
+        "deterministic": [     
+            {
+                "fields": ["platforms"],
+                "ignore_values": ["PC", "Apple Mac OS", "Linux", "iPhone", "iPad", "Android"],
+                "std_func": None
+            }
+        ],
+        "probabilistic": {
+            "fields": ["title", "alt_titles"],
+            "cmp_func": link_titles
+        }
+    }]
+
+
+deterministic rules are exact matches (result 1 or 0)
+probabilitic matches return a value between 0.0 and 1.0
+
+"""
+
 import math
 import timeit
 import multiprocessing
@@ -5,9 +43,6 @@ from rdflib import Graph, RDF, Literal
 from datetime import datetime
 from pit.prov import Provenance
 
-#from .rdf import load_rdf_dataset, get_uris_by_type, get_values, match_literal
-#from .rdf import SOURCE_DATASET_ROW, CONTEXT, MATCHES_FILEPATH, DATASET_FILEPATH
-#from .rdf import KIRBY_PROP, KIRBY_MATCH
 from .config import PROV_AGENT, NS, DATASET_FILEPATH, MATCHES_FILEPATH, CONFIG
 from .rdf_dataset import RdfDataset
 

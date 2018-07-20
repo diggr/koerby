@@ -1,3 +1,17 @@
+"""
+Koerby filters
+
+Filters are applied after the matching process to filter out or reevaluate matches.
+
+---
+
+Perfect match filter: If between two entries (rows) of differnt datasets exist one or more matches 
+with match value = 1; remove all other matches of either one entry has with a different entry in
+the other dataset
+
+"""
+
+
 from pit.prov import Provenance
 from tqdm import tqdm 
 

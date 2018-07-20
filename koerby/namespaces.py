@@ -20,11 +20,7 @@ class KirbyNamespace(object):
             "dataset": str(self._dataset),
             "properties": str(self._property)
         }
-        
-    # def kirbyEntry(self):
-    #     id_ = "{}_{}".format(PROJECT_NAME, uuid.uuid4().hex)
-    #     return self._entry[id_]
-    
+            
     def cluster(self):
         return self._cluster["c_{}".format(uuid.uuid4().hex)]
 
@@ -38,6 +34,9 @@ class KirbyNamespace(object):
         return self._property["p_{}".format(name)]
 
     def match(self, row, match):
+        """
+        Creates a match uri by hashing the combined string of both :row: and :match: (in alphabetical order)
+        """
         comb = sorted([str(row), str(match)])
         uid = hashlib.md5("".join(comb).replace(self._core["Dataset"], "").encode("utf-8")).hexdigest()
         return self._match["m_{}".format(uid)]        
