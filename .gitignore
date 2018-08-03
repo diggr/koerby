@@ -11,4 +11,4 @@ kirby/test/__pycache__
 kirby/pit/__pycache__
 *.yml
 *.ipynb
-*.txt
+koerby.egg-info/

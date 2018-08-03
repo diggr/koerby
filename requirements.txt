@@ -1,0 +1,12 @@
+pandas==0.22.0
+networkx==2.1
+rdflib==4.2.2
+setuptools==36.5.0.post20170921
+pytest==3.5.1
+requests==2.18.4
+python_louvain==0.11
+tqdm==4.19.4
+SPARQLWrapper==1.8.2
+community==1.0.0b1
+pit==0.3
+PyYAML==3.13
