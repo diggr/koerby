@@ -7,5 +7,9 @@ setup(
     author='diggr',
     author_email='p.muehleder@ub.uni-leipzig.de',
     license='MIT',
-    packages=['koerby']
+    packages=['koerby'],
+    entry_points="""
+        [console_scripts]
+        koerby=koerby.cli:cli
+    """
 )

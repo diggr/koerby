@@ -8,6 +8,7 @@ import os
 import json
 import yaml
 from rdflib import Graph, RDF
+from collections import defaultdict
 from .namespaces import KirbyNamespace
 
 def load_jsonld(filepath, context):
@@ -72,3 +73,21 @@ class KirbyReader(object):
                     matches.append( (entry, match_value) )
         return sorted(matches, key=lambda x: -x[1])
 
+    def all_matches(self, dataset, id_):
+        source_uri = self._ns.entry(dataset, id_)
+        matches = defaultdict(list)
+
+        done = []
+
+        for match, match_value in self._all_matches(source_uri):
+            for entry in self._all_match_entries(match):
+                entry_split = entry.split("/")
+                match_ds = entry_split[-2]
+                match_id = entry_split[-1]
+                
+                if match_id not in done:
+                    matches[match_ds].append( (match_id, match_value) )
+                    done.append(match_id)
+        return_set = { ds:data for ds, data in dict(matches).items() }
+
+        return { k: sorted(x, key=lambda x: -x[1]) for k,x in return_set.items() }
