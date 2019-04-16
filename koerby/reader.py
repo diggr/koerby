@@ -32,14 +32,21 @@ class KirbyReader(object):
     def __init__(self, kirby_dir):
         config = load_config_file(kirby_dir)
         namespaces = config["namespaces"]
-        self._matches_filepath = os.path.join(kirby_dir,
-                                              config["directories"]["data"],
-                                              "{}_matches.json".format(config["project"]["name"]))
+        self._matches_filepath = os.path.join(
+            kirby_dir, 
+            config["directories"]["data"], 
+            "{}_matches.json".format(config["project"]["name"]))
         self._ns = KirbyNamespace(namespaces)
 
         print("load koerby matches ...")
         self._g = load_jsonld(self._matches_filepath, self._ns.context)
-    
+        print("load cluster dataset")
+        self._cluster_filepath = os.path.join(
+            kirby_dir,
+            config["directories"]["data"],
+            "{}_cluster.json".format(config["project"]["name"]))
+        self._g += load_jsonld(self._cluster_filepath, self._ns.context)
+
     def matches_file(self):
         return self._matches_filepath
 
@@ -86,8 +93,52 @@ class KirbyReader(object):
                 match_id = entry_split[-1]
                 
                 if match_id not in done:
-                    matches[match_ds].append( (match_id, match_value) )
-                    done.append(match_id)
+                    if match_id != id_:
+                        matches[match_ds].append( { "id": match_id, "value": match_value } )
+                        done.append(match_id)
         return_set = { ds:data for ds, data in dict(matches).items() }
 
-        return { k: sorted(x, key=lambda x: -x[1]) for k,x in return_set.items() }
+        return { k: sorted(x, key=lambda x: -x["value"]) for k,x in return_set.items() }
+
+    def get_cluster(self, dataset, id_):
+        uri = 'http://kirby.diggr.link/dataset/{ds}/{id}'.format(ds=dataset, id=id_)
+        links = []
+        cluster_id = None
+        done = []
+        qres = self._g.query(
+            """
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema%23>
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns%23>
+            PREFIX prop: <http://kirby.diggr.link/property/>
+            SELECT ?c ?m ?m1 ?m2 ?r
+            WHERE {{
+                    <{uri}> prop:p_belongs_to_match ?tm .
+                    ?tm prop:p_belongs_to_cluster ?c .
+                    ?c prop:p_contains_match ?m .
+                    ?m prop:p_has_match_value ?r .
+            ?m prop:p_matched ?m1 .
+            ?m prop:p_matched ?m2 .
+            FILTER (?m1 != ?m2)
+            }}
+            """.format(uri=uri))
+        for record in qres:
+            cluster_id = str(record[0]).split('/')[-1]
+            match_uri = str(record[1])
+            source_uri = str(record[2])
+            target_uri = str(record[3])
+            value = float(record[4])
+            if match_uri not in done:
+                done.append(match_uri)
+                links.append({
+                    'matchUri': match_uri,
+                    'sourceDataset': source_uri.split('/')[-2],
+                    'sourceId': source_uri.split('/')[-1],
+                    'targetDataset': target_uri.split('/')[-2],
+                    'targetId': target_uri.split('/')[-1],
+                    'value': value
+                })
+            #print(record)
+        return {
+            'clusterId': cluster_id,
+            'links': links
+        }
