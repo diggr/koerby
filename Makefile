@@ -10,7 +10,7 @@ pip-sync: ## Install all dev dependencies
 	python -m piptools sync requirements-dev.txt
 
 .PHONY: develop
-develop: git-flow pip-sync pip-check ## Setup repository for development
+develop: pip-sync pip-check ## Setup repository for development
 
 .PHONY: pip-check
 pip-check: ## Verify that all python package dependencies are met
