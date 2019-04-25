@@ -2,13 +2,13 @@ data
 source
 export
 import
+build
+dist
 test.py
 .ipynb_checkpoints
 .pytest_cache
-__pycache__
-kirby/__pycache__
-kirby/test/__pycache__
-kirby/pit/__pycache__
 *.yml
 *.ipynb
 koerby.egg-info/
+*.py{o,c}
+
