@@ -1,0 +1,13 @@
+Flask==1.0.2
+Flask-RESTful==0.3.7
+rdflib==4.2.2
+rdflib-jsonld==0.4.0
+pandas==0.22.0
+networkx==2.1
+requests==2.20.0
+tqdm==4.19.4
+SPARQLWrapper==1.8.2
+community==1.0.0b1
+provit==1.0.1
+PyYAML==5.1
+flask-restful==0.3.7
