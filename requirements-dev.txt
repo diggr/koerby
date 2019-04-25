@@ -22,7 +22,8 @@ markupsafe==1.1.1
 more-itertools==7.0.0     # via pytest
 networkx==2.1
 numpy==1.16.3
-pandas==0.22.0
+pandas==0.24.2
+pip-tools==3.6.1
 pluggy==0.6.0             # via pytest
 provit==1.0.1
 py==1.8.0                 # via pytest

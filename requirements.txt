@@ -20,7 +20,7 @@ jinja2==2.10.1            # via flask, provit
 markupsafe==1.1.1         # via jinja2, provit
 networkx==2.1
 numpy==1.16.3             # via pandas
-pandas==0.22.0
+pandas==0.24.2
 provit==1.0.1
 pyparsing==2.4.0          # via provit, rdflib
 python-dateutil==2.8.0    # via pandas
