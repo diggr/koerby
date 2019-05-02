@@ -27,5 +27,9 @@ class Cluster(Resource):
 koerby.add_resource(Links, '/<string:dataset_name>/<string:id_>/links')
 koerby.add_resource(Cluster, '/<string:dataset_name>/<string:id_>/cluster')
 
-def start_api():
-    app.run(debug=True, port=PORT)
+def start_api(host, port, debug):
+    app.run(
+        host=host,
+        port=port,
+        debug=debug,
+    )
