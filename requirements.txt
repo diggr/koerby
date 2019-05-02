@@ -18,7 +18,7 @@ isodate==0.6.0            # via provit, rdflib
 itsdangerous==1.1.0       # via flask, provit
 jinja2==2.10.1            # via flask, provit
 markupsafe==1.1.1         # via jinja2, provit
-networkx==2.1
+networkx==2.3
 numpy==1.16.3             # via pandas
 pandas==0.24.2
 provit==1.0.1
@@ -28,9 +28,9 @@ pytz==2019.1              # via flask-restful, pandas
 pyyaml==5.1
 rdflib-jsonld==0.4.0
 rdflib==4.2.2
-requests==2.20.0
+requests==2.20.1
 six==1.12.0               # via flask-cors, flask-restful, isodate, provit, python-dateutil
-sparqlwrapper==1.8.2
-tqdm==4.19.4
+sparqlwrapper==1.8.4
+tqdm==4.31.1
 urllib3==1.24.2           # via requests
 werkzeug==0.15.2          # via flask, provit
