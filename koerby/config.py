@@ -23,7 +23,7 @@ def load_config():
     """
     if os.path.exists("config.yml"):
         with open("config.yml") as f:
-            config = yaml.load(f)
+            config = yaml.safe_load(f)
     else:
         raise IOError("config.yml does not exist!")
     return config
