@@ -5,12 +5,12 @@ Pipline/framework for csv dataset integration
 ## Installation
 
 Intall dependencies
-```
+```zsh
 $ pip install -r requirements.txt
 ```
 
 Install kirby 
-```
+```zsh
 $ pip install -e .
 ```
 
@@ -18,7 +18,7 @@ $ pip install -e .
 
 * Create kirby project folder with config.yml
 
-```
+```yaml
 project:
   name: game_metadata
   entity-type: game
@@ -50,7 +50,7 @@ The filename of the json file will be used as the dataset name.
 For every datafield in the json file, a property `p_<field_name>` will be created.
 
 
-```
+```python
 from koerby.rdf import generate_rdf_dataset
 
 if __name__ == "__main__":
@@ -71,7 +71,7 @@ literal as parameter and returns a string literal).
 Probabilistic rule needs a compare function, which takes two lists of string literal as 
 parameter and return a matching ratio ratio between 0.0 and 1.0.
 
-```
+```python
 from koerby.matching import match_datasets
 
 #some linking algorithm
