@@ -94,3 +94,14 @@ if __name__ == "__main__":
     match_datasets(match_config)
 
 ```
+
+## Authors
+
+* Peter Mühleder <muehleder@saw-leipzig.de>
+* Florian Rämisch <raemisch@ub.uni-leipzig.de>
+
+## Copyright and License
+
+GNU Affero General Public License v3
+
+2019,2020 Universitätsbibliothek Leipzig <info@ub.uni-leipzig.de>
