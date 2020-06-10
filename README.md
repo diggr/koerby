@@ -1,6 +1,8 @@
-# kørbyi
+# kørby
 
 Pipline/framework for csv dataset integration
+
+![kørby logo](assets/kørby_header.png?raw=true "kørby")
 
 ## Installation
 
